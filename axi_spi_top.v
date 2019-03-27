@@ -34,7 +34,7 @@ module axi_spi_top
 	localparam  AXI_SPI_LSB_WIDTH		= `_myLOG2_(AXI_SPI_BYTE_NUM-1);
 	localparam  AXI_RESP_WIDTH 			= `_AXI_RESP_WIDTH_;
 	localparam  AXI_ID_WIDTH 				= `_AXI_ID_WIDTH_;
-	localparam  DEADLOCK_LIMIT			= 15;
+	localparam  DEADLOCK_LIMIT			= 255;
 
 	/* axi4-lite interface ports */
 	input 																axi_aclk;
