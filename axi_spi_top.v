@@ -268,8 +268,8 @@ module axi_spi_top
 				axi_wready	<=	1'b0;
 				// if(~axi_awvalid)
 				axi_awready	<=	1'b0;
-				// if(axi_bready)
-				axi_bvalid	<=	1'b0;
+				if(axi_bready)
+					axi_bvalid	<=	1'b0;
 				/* deadlock-free */
 				wr_deadlock		<=	1'b1;
 			end
@@ -353,8 +353,8 @@ module axi_spi_top
 				/* clear ready and valid bits for every channel */
 				// if(~axi_arvalid)
 				axi_arready			<=	1'b0;
-				// if(axi_rready)
-				axi_rvalid			<=	1'b0;
+				if(axi_rready)
+					axi_rvalid			<=	1'b0;
 				spi_rx_fifo_ack	<=	1'b0;
 				/* deadlock-free */
 				rd_deadlock			<=	1'b1;
