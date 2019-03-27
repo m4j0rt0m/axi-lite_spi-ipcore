@@ -32,7 +32,7 @@
 	localparam	SPI_SRR_Value	=	32'h0000000a;
 
 	/* axi spi parameters */
-	localparam	FREQ_SPI							=	2000000;
+	localparam	FREQ_SPI							=	12500000;
 	localparam	DATA_WIDTH_SPI				=	8;
 
 	/* axi spi control bits */
