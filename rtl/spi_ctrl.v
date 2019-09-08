@@ -6,9 +6,8 @@
  */
 module spi_ctrl
 # (
-    parameter FREQ_CLK  = 50000000,
-    parameter FREQ_SPI  = 2500000,
-    parameter BYTE      = 8
+    parameter SPI_RATIO_GRADE = 2,
+    parameter BYTE            = 8
   )
 (/*AUTOARG*/
    // Outputs
@@ -16,27 +15,28 @@ module spi_ctrl
    spi_mosi_o,
    // Inputs
    clk_i, arst_n_i, spi_select_i, spi_msb_lsb_sel_i, spi_exchange_i,
-   spi_send_data_i, spi_miso_i
+   spi_ratio_i, spi_send_data_i, spi_miso_i
    );
 
   /* ctrl */
-  input               clk_i;
-  input               arst_n_i;
-  input               spi_select_i;
-  input               spi_msb_lsb_sel_i;
-  input               spi_exchange_i;
-  output              spi_busy_o;
-  output              spi_ready_o;
+  input                         clk_i;
+  input                         arst_n_i;
+  input                         spi_select_i;
+  input                         spi_msb_lsb_sel_i;
+  input                         spi_exchange_i;
+  output                        spi_busy_o;
+  output                        spi_ready_o;
+  input   [SPI_RATIO_GRADE-1:0] spi_ratio_i;
 
   /* data */
-  input   [BYTE-1:0]  spi_send_data_i;
-  output  [BYTE-1:0]  spi_recv_data_o;
+  input   [BYTE-1:0]            spi_send_data_i;
+  output  [BYTE-1:0]            spi_recv_data_o;
 
   /* spi */
-  output              spi_clk_o;
-  output              spi_cs_n_o;
-  output              spi_mosi_o;
-  input               spi_miso_i;
+  output                        spi_clk_o;
+  output                        spi_cs_n_o;
+  output                        spi_mosi_o;
+  input                         spi_miso_i;
 
   /* regs, wires and assigns */
   wire    spi_clk_en;
@@ -45,13 +45,13 @@ module spi_ctrl
   /* spi clock generator */
   spi_clk_gen
     # (
-        .FREQ_CLK (FREQ_CLK), //..50MHz
-        .FREQ_SPI (FREQ_SPI)  //..2.5MHz
+        .SPI_RATIO_GRADE  (SPI_RATIO_GRADE)
       )
     spi_clk_gen_i0  (
       .clk_i      (clk_i),
       .arst_n_i   (arst_n_i),
       .en_i       (spi_clk_en),
+      .ratio_i    (spi_ratio_i),
       .spi_clk_o  (spi_clk_o)
     );
 

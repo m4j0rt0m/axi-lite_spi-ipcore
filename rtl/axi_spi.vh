@@ -20,6 +20,8 @@
   `define _SPI_SSR_     7'h70
   `define _SPI_TFOR_    7'h74
   `define _SPI_RFOR_    7'h78
+  //  custom registers
+  `define _SPI_RCLK_    7'h30
 
   /* axi spi parameters (reset values) */
   `define _SPI_CR_INIT_   32'h00000180
@@ -30,13 +32,15 @@
   `define _SPI_GIER_INIT_ 32'h00000000
   `define _SPI_ISR_INIT_  32'h00000000
   `define _SPI_IER_INIT_  32'h00000000
+  //  custom registers (reset values)
+  `define _SPI_RCLK_INIT_ 0
 
   /* axi spi soft reset register value */
   `define _SPI_SRR_VALUE_ 32'h0000000a
 
   /* axi spi parameters */
-  `define _FREQ_SPI_        10000000
   `define _DATA_WIDTH_SPI_  8
+  `define _SPI_RATIO_GRADE_ 3
 
   /* axi spi control bits */
   `define _CR_LSB_FIRST_BIT_      9

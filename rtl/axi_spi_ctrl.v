@@ -6,8 +6,7 @@
  */
 module axi_spi_ctrl
 # (
-    parameter FREQ_CLK        = 50000000,
-    parameter FREQ_SPI        = 2500000,
+    parameter SPI_RATIO_GRADE = 2,
     parameter DATA_WIDTH      = 8,
     parameter REG_WIDTH       = 32,
     parameter FIFO_DEPTH      = 64,
@@ -26,27 +25,28 @@ module axi_spi_ctrl
    // Inputs
    clk_i, arst_n_i, soft_rst_i, slave_select_i, control_lsb_i,
    control_rx_fifo_reset_i, control_tx_fifo_reset_i, control_cpha_i,
-   control_cpol_i, control_master_i, control_spi_enable_i, tx_req_i,
-   tx_data_i, rx_req_i, rx_ack_i, spi_miso_i
+   control_cpol_i, control_master_i, control_spi_enable_i,
+   spi_ratio_i, tx_req_i, tx_data_i, rx_req_i, rx_ack_i, spi_miso_i
    );
 
   /* flow ctrl */
-  input                         clk_i;
-  input                         arst_n_i;
-  input                         soft_rst_i;
+  input                             clk_i;
+  input                             arst_n_i;
+  input                             soft_rst_i;
 
   /* ctrl */
-  input                         slave_select_i;
-  input                         control_lsb_i;
-  input                         control_rx_fifo_reset_i;
-  input                         control_tx_fifo_reset_i;
-  input                         control_cpha_i;       //..temporary not used
-  input                         control_cpol_i;       //..temporary not used
-  input                         control_master_i;     //..temporary ignored (used only for status)
-  input                         control_spi_enable_i; //..temporary ignored
+  input                             slave_select_i;
+  input                             control_lsb_i;
+  input                             control_rx_fifo_reset_i;
+  input                             control_tx_fifo_reset_i;
+  input                             control_cpha_i;       //..temporary not used
+  input                             control_cpol_i;       //..temporary not used
+  input                             control_master_i;     //..temporary ignored (used only for status)
+  input                             control_spi_enable_i; //..temporary ignored
+  input       [SPI_RATIO_GRADE-1:0] spi_ratio_i;
 
   /* status */
-  output  reg [REG_WIDTH-1:0]   status_o;
+  output  reg [REG_WIDTH-1:0]       status_o;
 
   /* tx fifo */
   input                         tx_req_i;
@@ -268,8 +268,7 @@ module axi_spi_ctrl
   /* spi ctrl */
   spi_ctrl
     # (
-        .FREQ_CLK (FREQ_CLK), //..main clock freq
-        .FREQ_SPI (FREQ_SPI)  //..spi clock freq
+        .SPI_RATIO_GRADE (SPI_RATIO_GRADE)  //..spi clock ratio grade
       )
     spi_ctrl  (
       /* ctrl */
@@ -280,6 +279,7 @@ module axi_spi_ctrl
       .spi_exchange_i     (spi_exchange),
       .spi_busy_o         (spi_busy),
       .spi_ready_o        (spi_ready),
+      .spi_ratio_i        (spi_ratio_i),
 
       /* data */
       .spi_send_data_i    (spi_send_data),

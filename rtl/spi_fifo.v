@@ -20,9 +20,6 @@ module spi_fifo
    req_b_i, ack_b_i
    );
 
-  /* includes */
-  `include "my_defines.vh"
-
   /* local parameters */
   localparam  READ    = 1'b1;
   localparam  WRITE   = 1'b0;
@@ -224,6 +221,7 @@ module spi_fifo
   assign fifo_full_o      = fifo_full;
   assign fifo_empty_o     = fifo_empty;
   assign fifo_free        = ~fifo_full;
-  assign fifo_occupancy_o = {{`_DIFF_SIZE_(REG_WIDTH,(FIFO_ADDR+1)){1'b0}},occupancy};
+  assign fifo_occupancy_o[REG_WIDTH-1:(FIFO_ADDR+1)]  = 0;
+  assign fifo_occupancy_o[FIFO_ADDR:0]                = occupancy;
 
  endmodule

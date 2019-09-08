@@ -6,47 +6,33 @@
  */
 module spi_clk_gen
 # (
-    parameter FREQ_CLK  = 100000000,  //..100MHz
-    parameter FREQ_SPI  = 2000000     //..2MHz
+    parameter SPI_RATIO_GRADE = 3
   )
 (/*AUTOARG*/
    // Outputs
    spi_clk_o,
    // Inputs
-   clk_i, arst_n_i, en_i
+   clk_i, arst_n_i, en_i, ratio_i
    );
 
-  /* flow control */
-  input       clk_i;
-  input       arst_n_i;
-  input       en_i;
+  /* ports */
+  input                       clk_i;
+  input                       arst_n_i;
+  input                       en_i;
+  input [SPI_RATIO_GRADE-1:0] ratio_i;
+  output                      spi_clk_o;
 
-  /* spi clock */
-  output  reg spi_clk_o;
+  /* ratio-driven clock generator */
+  ratio_clk
+    # (
+        .RATIO_GRADE  (SPI_RATIO_GRADE)
+      )
+    ratio_clk_inst (
+        .clk_i        (clk_i),
+        .arst_n_i     (arst_n_i),
+        .en_i         (en_i),
+        .ratio_i      (ratio_i),
+        .ratio_clk_o  (spi_clk_o)
+      );
 
-  localparam  LIMIT = FREQ_CLK/(2*FREQ_SPI);
-
-  reg [31:0]  counter;
-
-  always @ (posedge clk_i, negedge arst_n_i)  begin
-    if(~arst_n_i) begin
-      counter   <=  0;
-      spi_clk_o <=  0;
-    end
-    else  begin
-      if(~en_i) begin
-        counter   <=  0;
-        spi_clk_o <=  0;
-      end
-      else  begin
-        if(counter==LIMIT)  begin
-          counter   <=  0;
-          spi_clk_o <=  ~spi_clk_o;
-        end
-        else
-          counter <=  counter + 1;
-      end
-    end
-  end
-
-endmodule
+endmodule // spi_clk_gen

@@ -18,12 +18,10 @@ module axi_spi_top
 
   /* includes */
   `include "axi_spi_defines.vh"
-  `include "main_parameters.vh"
   `include "my_defines.vh"
   `include "axi_spi.vh"
 
   /* local parameters */
-  localparam  FREQ_CLK        = `_FREQ_CLK_;
   localparam  BYTE            = `_BYTE_;
   localparam  AXI_DATA_WIDTH  = `_AXI_SPI_DATA_WIDTH_;
   localparam  AXI_ADDR_WIDTH  = `_AXI_SPI_ADDR_WIDTH_;
@@ -37,8 +35,8 @@ module axi_spi_top
   localparam  DEADLOCK_WIDTH  = `_myLOG2_(DEADLOCK_LIMIT-1);
 
   /* axi-spi parameters */
-  localparam  FREQ_SPI              = `_FREQ_SPI_;              //..axi spi parameters
   localparam  DATA_WIDTH_SPI        = `_DATA_WIDTH_SPI_;
+  localparam  SPI_RATIO_GRADE       = `_SPI_RATIO_GRADE_;
   localparam  SPI_GIER              = `_SPI_GIER_;              //..axi spi register map
   localparam  SPI_ISR               = `_SPI_ISR_;
   localparam  SPI_IER               = `_SPI_IER_;
@@ -50,6 +48,7 @@ module axi_spi_top
   localparam  SPI_SSR               = `_SPI_SSR_;
   localparam  SPI_TFOR              = `_SPI_TFOR_;
   localparam  SPI_RFOR              = `_SPI_RFOR_;
+  localparam  SPI_RCLK              = `_SPI_RCLK_;              // -> (custom mapped register)
   localparam  SPI_CR_INIT           = `_SPI_CR_INIT_;           //..axi spi parameters (reset values)
   localparam  SPI_SR_INIT           = `_SPI_SR_INIT_;
   localparam  SPI_SSR_INIT          = `_SPI_SSR_INIT_;
@@ -58,6 +57,7 @@ module axi_spi_top
   localparam  SPI_GIER_INIT         = `_SPI_GIER_INIT_;
   localparam  SPI_ISR_INIT          = `_SPI_ISR_INIT_;
   localparam  SPI_IER_INIT          = `_SPI_IER_INIT_;
+  localparam  SPI_RCLK_INIT         = `_SPI_RCLK_INIT_;         // -> (custom mapped register init)
   localparam  SPI_SRR_VALUE         = `_SPI_SRR_VALUE_;         //..axi spi soft reset register value
   localparam  CR_LSB_FIRST_BIT      = `_CR_LSB_FIRST_BIT_;      //..axi spi control bits
   localparam  CR_RX_FIFO_RESET_BIT  = `_CR_RX_FIFO_RESET_BIT_;
@@ -142,6 +142,12 @@ module axi_spi_top
   reg   [AXI_DATA_WIDTH-1:0]  spi_global_interrupt_en_reg;  //..SPI_GIER..(not implemented)
   reg   [AXI_DATA_WIDTH-1:0]  spi_interrupt_status_reg;     //..SPI_ISR..(not implemented)
   reg   [AXI_DATA_WIDTH-1:0]  spi_interrupt_enable_reg;     //..SPI_IER..(not implemented)
+  reg   [SPI_RATIO_GRADE-1:0] spi_ratio_reg;                //..SPI_RCLK..(custom -> clk-spi_clk ratio)
+                                                            //    0:  1/2
+                                                            //    1:  1/4
+                                                            //    2:  1/8
+                                                            //    3:  1/16 ...
+                                                            //    until SPI_RATIO_GRADE
 
   /* write data */
   generate
@@ -172,6 +178,7 @@ module axi_spi_top
       spi_global_interrupt_en_reg <=  SPI_GIER_INIT;
       spi_interrupt_status_reg    <=  SPI_ISR_INIT;
       spi_interrupt_enable_reg    <=  SPI_IER_INIT;
+      spi_ratio_reg               <=  SPI_RCLK_INIT;
       soft_reset                  <=  1'b1;
       axi_awready_o               <=  1'b0;
       axi_wready_o                <=  1'b0;
@@ -191,6 +198,7 @@ module axi_spi_top
           spi_global_interrupt_en_reg <=  SPI_GIER_INIT;
           spi_interrupt_status_reg    <=  SPI_ISR_INIT;
           spi_interrupt_enable_reg    <=  SPI_IER_INIT;
+          spi_ratio_reg               <=  SPI_RCLK_INIT;
           soft_reset                  <=  1'b1;
           axi_awready_o               <=  1'b0;
           axi_wready_o                <=  1'b0;
@@ -208,6 +216,7 @@ module axi_spi_top
           spi_global_interrupt_en_reg <=  SPI_GIER_INIT;
           spi_interrupt_status_reg    <=  SPI_ISR_INIT;
           spi_interrupt_enable_reg    <=  SPI_IER_INIT;
+          spi_ratio_reg               <=  SPI_RCLK_INIT;
           soft_reset                  <=  1'b0;
           axi_awready_o               <=  1'b0;
           axi_wready_o                <=  1'b0;
@@ -235,6 +244,7 @@ module axi_spi_top
                   spi_tx_fifo_req <=  1;
               end
               SPI_SSR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  spi_slave_select_reg        <=  write_data;
+              SPI_RCLK[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: spi_ratio_reg               <=  write_data[SPI_RATIO_GRADE-1:0];
               default:  begin
                 spi_global_interrupt_en_reg <=  spi_global_interrupt_en_reg;
                 spi_interrupt_status_reg    <=  spi_interrupt_status_reg;
@@ -243,6 +253,7 @@ module axi_spi_top
                 spi_tx_fifo_data            <=  spi_tx_fifo_data;
                 spi_tx_fifo_req             <=  spi_tx_fifo_req;
                 spi_slave_select_reg        <=  spi_slave_select_reg;
+                spi_ratio_reg               <=  spi_ratio_reg;
               end
             endcase
             /* change state */
@@ -453,8 +464,7 @@ module axi_spi_top
   /* axi spi ctrl */
   axi_spi_ctrl
     #  (
-        .FREQ_CLK         (FREQ_CLK),
-        .FREQ_SPI         (FREQ_SPI),
+        .SPI_RATIO_GRADE  (SPI_RATIO_GRADE),
         .DATA_WIDTH       (DATA_WIDTH_SPI),
         .REG_WIDTH        (AXI_DATA_WIDTH),
         .FIFO_DEPTH       (AXI_FIFO_DEPTH),
@@ -482,6 +492,7 @@ module axi_spi_top
       .control_master_i         (spi_control_reg[CR_MASTER_BIT]),
       .control_spi_enable_i     (spi_control_reg[CR_SPI_ENABLE_BIT]),
       .status_o                 (spi_status_reg),
+      .spi_ratio_i              (spi_ratio_reg[SPI_RATIO_GRADE-1:0]),
 
       /* tx fifo */
       .tx_req_i                 (spi_tx_fifo_req),
