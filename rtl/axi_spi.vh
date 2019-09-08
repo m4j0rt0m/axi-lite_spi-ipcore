@@ -33,7 +33,7 @@
   `define _SPI_ISR_INIT_  32'h00000000
   `define _SPI_IER_INIT_  32'h00000000
   //  custom registers (reset values)
-  `define _SPI_RCLK_INIT_ 0
+  `define _SPI_RCLK_INIT_ 1
 
   /* axi spi soft reset register value */
   `define _SPI_SRR_VALUE_ 32'h0000000a
