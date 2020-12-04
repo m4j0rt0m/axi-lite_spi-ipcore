@@ -25,7 +25,7 @@ TOP_MODULE          = axi_spi_top
 
 ### LINTER ###
 LINT                = verilator
-LINT_FLAGS          = --lint-only --top-module $(TOP_MODULE) -Wall -Wno-UNUSED $(PRJ_INCLUDES)
+LINT_FLAGS          = --lint-only --top-module $(TOP_MODULE) -Wall -Wno-fatal --quiet-exit $(PRJ_INCLUDES)
 
 ### SIMULATION ###
 TOP_MODULE_SIM      = axi_spi_top
@@ -76,10 +76,10 @@ veritedium:
 	$(foreach SRC,$(PRJ_SRC),$(call veritedium-command,$(SRC)))
 	$(foreach SRC,$(TESTBENCH_SRC),$(call veritedium-command,$(SRC)))
 
-lint: $(PRJ_SRC)
-	$(LINT) $(LINT_FLAGS) $^
+lint:
+	$(LINT) $(TOP_MODULE).v $(LINT_FLAGS)
 
-sim-all: $(OUTPUT_DIR)/$(TOP_MODULE_SIM).vcd $(TESTBENCH_SRC)
+gtk: $(OUTPUT_DIR)/$(TOP_MODULE_SIM).vcd $(TESTBENCH_SRC)
 	@(gtkwave $< > /dev/null 2>&1 &)
 
 sim: $(OUTPUT_DIR)/$(TOP_MODULE_SIM).vcd $(TESTBENCH_SRC)
@@ -167,4 +167,4 @@ $(OUTPUT_DIR)/$(TOP_MODULE_SIM).vcd: $(OUTPUT_DIR)/$(TOP_MODULE_SIM).tb $(PRJ_SR
 	$(RUN) $(RUN_FLAGS) $<
 	mv $(TOP_MODULE_SIM).vcd $(OUTPUT_DIR)/$(TOP_MODULE_SIM).vcd
 
-.PHONY: all veritedium lint sim clean clean-all project compile compile_flow set_pinout connect scan flash_fpga create_project create_project_tcl
+.PHONY: all veritedium lint sim gtk clean clean-all project compile compile_flow set_pinout connect scan flash_fpga create_project create_project_tcl
