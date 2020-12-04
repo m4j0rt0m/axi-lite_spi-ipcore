@@ -1,6 +1,6 @@
 
-  `ifndef _AXI_SPI_DEFINES_
-  `define _AXI_SPI_DEFINES_
+  `ifndef _AXI_SPI_DEFINES_H_
+  `define _AXI_SPI_DEFINES_H_
 
   `define _AXI_SPI_DATA_WIDTH_  32
   `define _AXI_SPI_ADDR_WIDTH_  7
