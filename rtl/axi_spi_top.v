@@ -1,9 +1,21 @@
-/*
- * Author:        Abraham J. Ruiz R. (https://github.com/m4j0rt0m)
- * File:          axi_spi_top.v
- * Description:   AXI4-Lite SPI Slave Module
- * Organizations: BSC; CIC-IPN
- */
+/* -------------------------------------------------------------------------------
+ * Project        : AXI-lite SPI IP Core
+ * File           : axi_spi_top.v
+ * Description    : AXI4-Lite SPI Slave Module
+ * Organization   : BSC; CIC-IPN
+ * Author(s)      : Abraham J. Ruiz R. (aruiz) (https://github.com/m4j0rt0m)
+ * Email(s)       : abraham.ruiz@bsc.es; abraham.j.ruiz.r@gmail.com
+ * References     :
+ * -------------------------------------------------------------------------------
+ * Revision History
+ *  Revision   | Author      | Description
+ *  1.0        | aruiz       | First version
+ *  2.0        | aruiz       | Added asynchronous reset and soft reset
+ *  2.1        | aruiz       | Code refactoring and added Ratio Clock Gen
+ * -----------------------------------------------------------------------------*/
+
+`default_nettype none
+
 module axi_spi_top
 (/*AUTOARG*/
    // Outputs

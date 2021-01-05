@@ -1,9 +1,18 @@
-/*
- * Author:        Abraham J. Ruiz R. (https://github.com/m4j0rt0m)
- * File:          axi_spi.h
- * Description:   AXI4-Lite SPI Header file
- * Organizations: BSC; CIC-IPN
- */
+/* -------------------------------------------------------------------------------
+ * Project        : AXI-lite SPI IP Core
+ * File           : axi_spi.vh
+ * Description    : AXI4-Lite SPI Header file
+ * Organization   : BSC; CIC-IPN
+ * Author(s)      : Abraham J. Ruiz R. (aruiz) (https://github.com/m4j0rt0m)
+ * Email(s)       : abraham.ruiz@bsc.es; abraham.j.ruiz.r@gmail.com
+ * References     :
+ * -------------------------------------------------------------------------------
+ * Revision History
+ *  Revision   | Author      | Description
+ *  1.0        | aruiz       | First version
+ *  2.0        | aruiz       | Added asynchronous reset and soft reset
+ *  2.1        | aruiz       | Code refactoring and added Ratio Clock Gen
+ * -----------------------------------------------------------------------------*/
 
   `ifndef _AXI_SPI_H_
   `define _AXI_SPI_H_
