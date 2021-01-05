@@ -1,9 +1,21 @@
-/*
- * Author:        Abraham J. Ruiz R. (https://github.com/m4j0rt0m)
- * File:          spi_exch_byte.v
- * Description:   SPI mosi/miso data exchange control
- * Organizations: BSC; CIC-IPN
- */
+/* -------------------------------------------------------------------------------
+ * Project        : AXI-lite SPI IP Core
+ * File           : spi_exch_byte.v
+ * Description    : SPI mosi/miso data exchange control
+ * Organization   : BSC; CIC-IPN
+ * Author(s)      : Abraham J. Ruiz R. (aruiz) (https://github.com/m4j0rt0m)
+ * Email(s)       : abraham.ruiz@bsc.es; abraham.j.ruiz.r@gmail.com
+ * References     :
+ * -------------------------------------------------------------------------------
+ * Revision History
+ *  Revision   | Author      | Description
+ *  1.0        | aruiz       | First version
+ *  2.0        | aruiz       | Added asynchronous reset and soft reset
+ *  2.1        | aruiz       | Code refactoring and added Ratio Clock Gen
+ *  3.0        | aruiz       | Sync'd a main fixed clock and a variable faster
+ *             |             | clock for the axi write/read transactions
+ * -----------------------------------------------------------------------------*/
+
 module spi_exch_byte
 # (
     parameter BYTE  = 8
