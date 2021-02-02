@@ -3,13 +3,13 @@
 # Description:  AXI-Lite SPI Slave Project Makefile
 #################################################################
 
-MKFILE_PATH         = $(abspath $(lastword $(MAKEFILE_LIST)))
+MKFILE_PATH         = $(abspath $(firstword $(MAKEFILE_LIST)))
 TOP_DIR             = $(shell dirname $(MKFILE_PATH))
 
 ### DIRECTORIES ###
 SOURCE_DIR          = $(TOP_DIR)/rtl
 OUTPUT_DIR          = $(TOP_DIR)/build
-TESTBENCH_DIR       = $(TOP_DIR)/test_bench
+#TESTBENCH_DIR       = $(TOP_DIR)/test_bench
 SCRIPT_DIR          = $(TOP_DIR)/scripts
 
 ### RTL WILDCARDS ###
@@ -22,6 +22,7 @@ PRJ_INCLUDES        = $(addprefix -I, $(PRJ_DIRS))
 ### PROJECT ###
 PROJECT             = axi_spi
 TOP_MODULE          = axi_spi_top
+TOP_MODULE_FILE     = $(shell basename $(shell grep -r "module $(TOP_MODULE)" $(SOURCE_DIR) | cut -d ":" -f 1))
 
 ### LINTER ###
 LINT                = verilator
@@ -77,7 +78,7 @@ veritedium:
 	$(foreach SRC,$(TESTBENCH_SRC),$(call veritedium-command,$(SRC)))
 
 lint:
-	$(LINT) $(TOP_MODULE).v $(LINT_FLAGS)
+	$(LINT) $(TOP_MODULE_FILE) $(LINT_FLAGS)
 
 gtk: $(OUTPUT_DIR)/$(TOP_MODULE_SIM).vcd $(TESTBENCH_SRC)
 	@(gtkwave $< > /dev/null 2>&1 &)
