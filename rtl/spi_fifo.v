@@ -128,7 +128,13 @@ module spi_fifo
             fsm_fifo_wr <=  StateIdleWr;
           end
         end
-        default:  fsm_fifo_wr <=  fsm_fifo_wr;
+        default: begin
+          ack_a_o     <=  1'b0;
+          for(i = 0; i < FIFO_DEPTH; i = i + 1) begin
+            fifo[i] <= {DATA_WIDTH{1'b0}};
+          end
+          fsm_fifo_wr <=  StateInitWr;
+        end
       endcase
     end
   end
@@ -171,7 +177,11 @@ module spi_fifo
             end
           end
         end
-        default:  fsm_fifo_rd <=  fsm_fifo_rd;
+        default: begin
+          resp_b_o    <=  1'b0;
+          data_b_o    <=  {DATA_WIDTH{1'b0}};
+          fsm_fifo_rd <=  StateInitRd;
+        end
       endcase
     end
   end
