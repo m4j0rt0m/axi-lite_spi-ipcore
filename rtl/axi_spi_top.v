@@ -415,8 +415,22 @@ module axi_spi_top
           wr_deadlock <= 1'b1;
         end
         default:  begin
-          soft_reset  <= 1'b1;
-          fsm_axi_wr  <= StateInitWr;
+          axi_awready                 <= 1'b0;
+          axi_wready                  <= 1'b0;
+          axi_bresp                   <= {AXI_RESP_WIDTH{1'b0}};
+          axi_bvalid                  <= 1'b0;
+          axi_bid                     <= {AXI_ID_WIDTH{1'b0}};
+          spi_control_reg             <= SPI_CR_INIT;
+          spi_slave_select_reg        <= SPI_SSR_INIT;
+          spi_global_interrupt_en_reg <= SPI_GIER_INIT;
+          spi_interrupt_status_reg    <= SPI_ISR_INIT;
+          spi_interrupt_enable_reg    <= SPI_IER_INIT;
+          spi_ratio_reg               <= SPI_RCLK_INIT;
+          soft_reset                  <= 1'b1;
+          wr_deadlock                 <= 1'b0;
+          spi_tx_fifo_data            <= {DATA_WIDTH_SPI{1'b0}};
+          spi_tx_fifo_req             <= 0;
+          fsm_axi_wr                  <= StateInitWr;
         end
       endcase
     end
@@ -510,7 +524,17 @@ module axi_spi_top
           /* deadlock-free */
           rd_deadlock     <= 1'b1;
         end
-        default: fsm_axi_rd <= StateInitRd;
+        default: begin
+          axi_arready     <= 1'b0;
+          axi_rdata       <= {AXI_DATA_WIDTH{1'b0}};
+          axi_rresp       <= 2'b00;
+          axi_rvalid      <= 1'b0;
+          axi_rid         <= {AXI_ID_WIDTH{1'b0}};
+          spi_rx_fifo_ack <= 1'b0;
+          rd_deadlock     <= 1'b0;
+          spi_rx_fifo_req <= 1'b0;
+          fsm_axi_rd      <= StateInitRd;
+        end
       endcase
     end
   end

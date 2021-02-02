@@ -193,7 +193,16 @@ module axi_spi_ctrl
               fsm_spi_ctrl  <= StateIdle;
             end
           end
-          default: fsm_spi_ctrl <= StateInit;
+          default: begin
+            spi_send_data <= 0;
+            spi_exchange  <= 0;
+            tx_ready      <= 0;
+            tx_req        <= 0;
+            tx_ack        <= 0;
+            rx_req        <= 0;
+            rx_data       <= 0;
+            fsm_spi_ctrl  <= StateInit;
+          end
         endcase
       end
     end
