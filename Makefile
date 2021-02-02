@@ -78,7 +78,7 @@ veritedium:
 	$(foreach SRC,$(TESTBENCH_SRC),$(call veritedium-command,$(SRC)))
 
 lint:
-	$(LINT) $(TOP_MODULE).v $(LINT_FLAGS)
+	$(LINT) $(TOP_MODULE_FILE) $(LINT_FLAGS)
 
 gtk: $(OUTPUT_DIR)/$(TOP_MODULE_SIM).vcd $(TESTBENCH_SRC)
 	@(gtkwave $< > /dev/null 2>&1 &)
