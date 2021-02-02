@@ -64,6 +64,9 @@ module spi_fifo
   output  reg                   resp_b_o ;          //..read response
   input                         ack_b_i;            //..acknowledge read request
 
+  /* integers */
+  integer i;
+
   /* fifo structure and variables */
   reg   [DATA_WIDTH-1:0]  fifo [FIFO_DEPTH-1:0];  //..fifo
   reg   [FIFO_ADDR-1:0]   fifo_head_pointer ;     //..fifo.head (read)
@@ -94,6 +97,9 @@ module spi_fifo
   always @ (posedge clk_i, negedge arst_n_i)  begin
     if(~arst_n_i) begin
       ack_a_o     <=  1'b0;
+      for(i = 0; i < FIFO_DEPTH; i = i + 1) begin
+        fifo[i] <= {DATA_WIDTH{1'b0}};
+      end
       fsm_fifo_wr <=  StateInitWr;
     end
     else  begin
