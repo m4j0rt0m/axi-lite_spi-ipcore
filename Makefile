@@ -27,11 +27,12 @@ TOP_MODULE_FILE     = $(shell basename $(shell grep -r "module $(TOP_MODULE)" $(
 ### LINTERS ###
 LINT                = verilator
 LINT_FLAGS          = --lint-only --top-module $(TOP_MODULE) -Wall -Wno-fatal --quiet-exit $(PRJ_INCLUDES)
-SPYGLASS_LINT       = ./spyglass_lint
+SPYGLASS_LINT       = $(SCRIPT_DIR)/spyglass_lint
 SPYGLASS_REMOTE     = epi02.bsc.es
 SPYGLASS_LICENSE    = 27020@epi01.bsc.es
 SPYGLASS_BIN_DIR    = /eda/synopsys/2018-19/RHELx86/SPYGLASS_2018.09-SP1-1/SPYGLASS_HOME/bin
-SPYGLASS_LINT_FLAGS = --top $(TOP_MODULE) --files $(subst $(TOP_DIR)/,,$(PRJ_SRC)) --includes $(subst $(TOP_DIR)/,,$(PRJ_DIRS)) --license $(SPYGLASS_LICENSE) --debug
+SPYGLASS_WAIVER     = $(SCRIPT_DIR)/spyglass_waiver.awl
+SPYGLASS_LINT_FLAGS = --top $(TOP_MODULE) --files $(subst $(TOP_DIR)/,,$(PRJ_SRC)) --includes $(subst $(TOP_DIR)/,,$(PRJ_DIRS)) --license $(SPYGLASS_LICENSE) --debug --waiver $(subst $(TOP_DIR)/,,$(SPYGLASS_WAIVER))
 SPYGLASS_LINT_MOVE  = --top $(TOP_MODULE) --move
 export SPYGLASS_BIN_DIR
 
