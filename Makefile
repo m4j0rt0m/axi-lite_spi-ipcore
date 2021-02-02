@@ -157,6 +157,7 @@ clean:
 	rm -rf ./build/*
 
 clean-all: del-bak
+	rm -rf ./spyglass_output
 	rm -rf ./build
 	rm -rf ./db
 	rm -rf ./incremental_db
