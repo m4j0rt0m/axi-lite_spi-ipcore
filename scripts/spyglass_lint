@@ -37,6 +37,7 @@ parsed_top=false
 parsed_files=false
 parsed_include=false
 parsed_license=false
+parsed_env_src=false
 parsed_waiver=false
 parsed_sv=false
 parsed_output=false
@@ -97,12 +98,14 @@ function create_project {
 
 ### run project function ###
 function run_project {
-  if [ $parsed_useenv == true ]; then
-    export PATH=$PATH:$SPYGLASS_BIN_DIR
+  if [ $parsed_env_src == true ]; then
+    . ${env_source_file}
+  fi
+  if [ $parsed_license == true ]; then
+    export SNPSLMD_LICENSE_FILE=$license_file
+    export LM_LICENSE_FILE=$SNPSLMD_LICENSE_FILE
   fi
   export SKIP_PLATFORM_CHECK=TRUE
-  export SNPSLMD_LICENSE_FILE=$license_file
-  export LM_LICENSE_FILE=$SNPSLMD_LICENSE_FILE
 
   ### Rule: spyglass_lint ###
   echo -e "\n---------------------------------------------------------------------------------------------------"
@@ -155,8 +158,8 @@ function run_remote_project {
     echo -e "Please check your ssh key authentication setup with the $spyglass_remote server"
     echo -e "  Notes : If using remote linting feature, be sure to be able to connect passwordless via"
     echo -e "          ssh to REMOTE_SERVER."
-    echo -e "  Hint  : The corresponding alias in \"~/.ssh/config\" can be something like this"
-    echo -e "          (inserting the correct data):\n"
+    echo -e "  Hint  : The corresponding alias entry in \"~/.ssh/config\" can be something like this"
+    echo -e "          (filling with the corresponding data):\n"
     echo -e "          ---------------------------------"
     echo -e "          | Host <REMOTE_SERVER>          |"
     echo -e "          |   User <USERNAME>             |"
@@ -193,10 +196,14 @@ function run_remote_project {
   echo -e "ssh -T $spyglass_remote << EOF" > $remote_script
   echo -e "export SKIP_PLATFORM_CHECK=TRUE" >> $remote_script
   if [ $parsed_useenv == true ]; then
-    echo -e "export SNPS_LICENSE_FILE=${license_file}" >> $remote_script
-    echo -e "export SNPSLMD_LICENSE_FILE=${license_file}" >> $remote_script
-    echo -e "export LM_LICENSE_FILE=${license_file}" >> $remote_script
-    echo -e "export PATH=\$PATH:${SPYGLASS_BIN_DIR}" >> $remote_script
+    if [ $parsed_env_src == true ]; then
+      echo -e "source ${env_source_file}" >> $remote_script
+    fi
+    if [ $parsed_license == true ]; then
+      echo -e "export SNPS_LICENSE_FILE=${license_file}" >> $remote_script
+      echo -e "export SNPSLMD_LICENSE_FILE=${license_file}" >> $remote_script
+      echo -e "export LM_LICENSE_FILE=${license_file}" >> $remote_script
+    fi
   fi
   echo -e "cd ${remote_project_dir}" >> $remote_script
   echo -e "spyglass_main -batch -project ${remote_project_file} -designread -goals spyglass_lint" >> $remote_script
@@ -285,8 +292,6 @@ do
   if [ "$arg" == "--help" ]; then
     ./$0 --version
     echo "Usage: spyglass_lint [OPTIONS]"
-    echo "  Environment variables:"
-    echo "    SPYGLASS_BIN_DIR  : SpyGlass binary directory"
     echo "  Options:"
     echo "    --top       Top module"
     echo "    --files     Source files"
@@ -299,6 +304,7 @@ do
     echo "    --move      Move all the reports files into Output directory"
     echo "    --debug     Display output log information"
     echo "    --license   License file path"
+    echo "    --env-src   Environment source file"
     echo "    --waiver    Waiver file path"
     echo "    --sv        Enable SystemVerilog flag"
     echo "    --version   Display the spyglass lint helper script version"
@@ -308,7 +314,7 @@ do
   # print version option
   elif [ "$arg" == "--version" ]; then
     echo -e "SpyGlass linter script helper -- spyglass_lint"
-    echo -e "  Version      : v2.0"
+    echo -e "  Version      : v2.1"
     echo -e "  Organization : Barcelona Supercomputing Center"
     exit 0
 
@@ -453,6 +459,18 @@ do
       fi
       license_file=${args[$i+1]}
       parsed_license=true
+    fi
+
+  # environment source file option
+  elif [[ "$arg" == "--env-src" ]]; then
+    if [[ $parsed_env_src == false ]]; then
+      if [[ -z ${args[$i+1]} ]] || [[ ${args[$i+1]} == "--"* ]]; then
+        echo -e "Error: Missing environment source file path\n"
+        ./$0 --help
+        exit 0
+      fi
+      env_source_file=${args[$i+1]}
+      parsed_env_src=true
     fi
 
   # waiver file option
