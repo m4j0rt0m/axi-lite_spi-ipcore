@@ -1,0 +1,26 @@
+image: ubuntu:18.04
+
+before_script:
+  - apt install iverilog python3 -y
+
+stages:
+  - lint
+  - synthesis
+  - test
+
+lint:verilator:
+  stage: lint
+  needs: []
+  script:
+    - make lint
+
+lint:spyglass:
+  stage: lint
+  needs: []
+  only:
+    refs:
+      - develop
+      - /^release-.*$/
+      - merge_requests
+  script:
+    - make spyglass-lint

@@ -1,0 +1,15 @@
+# Ignore warnings about unread bits and variables
+# W528: "A signal or variable is set but never read"
+# W240: "Following Bits of signal ... are not read"
+waive -rule { W528 W240 }
+
+# waive uncritical warnings
+waive -du {  {axi_spi_ctrl}  }  -msg {Combinational and sequential parts of an FSM 'axi_spi_ctrl.fsm_spi_ctrl' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {axi_spi_top}   }  -msg {Combinational and sequential parts of an FSM 'axi_spi_top.axi_sync_wren' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {axi_spi_top}   }  -msg {Combinational and sequential parts of an FSM 'axi_spi_top.axi_sync_rden' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {axi_spi_top}   }  -msg {Combinational and sequential parts of an FSM 'axi_spi_top.fsm_axi_wr' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {axi_spi_top}   }  -msg {Combinational and sequential parts of an FSM 'axi_spi_top.fsm_axi_rd' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {spi_exch_byte} }  -msg {Combinational and sequential parts of an FSM 'spi_exch_byte.fsm_exch_byte' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {spi_exch_byte} }  -msg {Combinational and sequential parts of an FSM 'spi_exch_byte.check_sdclk_edge' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {spi_fifo}      }  -msg {Combinational and sequential parts of an FSM 'spi_fifo.fsm_fifo_wr' described in same always block} -rule {  {STARC05-2.11.3.1}  }   
+waive -du {  {spi_fifo}      }  -msg {Combinational and sequential parts of an FSM 'spi_fifo.fsm_fifo_rd' described in same always block} -rule {  {STARC05-2.11.3.1}  }
