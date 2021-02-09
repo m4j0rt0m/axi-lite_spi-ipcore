@@ -64,14 +64,12 @@ module spi_fifo
   output  reg                   resp_b_o ;          //..read response
   input                         ack_b_i;            //..acknowledge read request
 
-  /* integers */
-  integer i;
-
   /* fifo structure and variables */
   reg   [DATA_WIDTH-1:0]  fifo [FIFO_DEPTH-1:0];  //..fifo
   reg   [FIFO_ADDR-1:0]   fifo_head_pointer ;     //..fifo.head (read)
   reg   [FIFO_ADDR-1:0]   fifo_tail_pointer ;     //..fifo.tail (write)
   reg   [FIFO_ADDR:0]     occupancy ;             //..fifo.occupancy
+  reg                     allow_write;            //..fifo.allow write
   wire                    fifo_valid;             //..fifo.valid slot
   wire                    fifo_free;              //..fifo.free slot
   wire                    fifo_full;              //..fifo.full
@@ -90,33 +88,40 @@ module spi_fifo
     localparam  StateIdleRd = 3'b011;
     localparam  StateReqRd  = 3'b101;
 
+  //..fifo write operation (note: initial values are not determined, nor required)
+  always @ (posedge clk_i) begin
+    if(req_a_i & allow_write & (~fifo_full | allow_overwrite_i))
+      fifo[fifo_tail_pointer] <= data_a_i;
+  end
+
   /* write request fsm */
   //..controls write acknowledge signal
-  //..controls fifo write operation
   //..controls allow overwritting
   always @ (posedge clk_i, negedge arst_n_i)  begin
     if(~arst_n_i) begin
+      allow_write <=  1'b0;
       ack_a_o     <=  1'b0;
-      for(i = 0; i < FIFO_DEPTH; i = i + 1) begin
-        fifo[i] <= {DATA_WIDTH{1'b0}};
-      end
       fsm_fifo_wr <=  StateInitWr;
     end
     else  begin
       case(fsm_fifo_wr)
         StateInitWr:  begin
           ack_a_o     <=  1'b0;
-          if(~soft_rst_i)
+          if(~soft_rst_i) begin
+            allow_write <=  1'b1;
             fsm_fifo_wr <=  StateIdleWr;
+          end
+          else
+            allow_write <=  1'b0;
         end
         StateIdleWr:  begin
           if(soft_rst_i)
             fsm_fifo_wr <=  StateInitWr;
           else if(req_a_i)  begin //..request from port a (write)
             if(~fifo_full | allow_overwrite_i)  begin //..there's an empty fifo slot or overwritting is allowed
-              fifo[fifo_tail_pointer] <=  data_a_i;
-              ack_a_o                 <=  1'b1;
-              fsm_fifo_wr             <=  StateReqWr;
+              allow_write <=  1'b0;
+              ack_a_o     <=  1'b1;
+              fsm_fifo_wr <=  StateReqWr;
             end
           end
         end
@@ -130,9 +135,9 @@ module spi_fifo
         end
         default: begin
           ack_a_o     <=  1'b0;
-          for(i = 0; i < FIFO_DEPTH; i = i + 1) begin
+          /*for(i = 0; i < FIFO_DEPTH; i = i + 1) begin
             fifo[i] <= {DATA_WIDTH{1'b0}};
-          end
+          end*/
           fsm_fifo_wr <=  StateInitWr;
         end
       endcase
