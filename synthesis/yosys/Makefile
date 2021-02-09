@@ -50,7 +50,7 @@ YOSYS_SYN_INC_FLAGS   = $(addprefix -I, $(RTL_PATHS))
 ifeq ($(RTL_SYN_Y_PNR_TOOL),nextpnr)
 YOSYS_SYN_FLAGS       = -p "read_verilog -sv -formal $(YOSYS_SYN_INC_FLAGS) $(VERILOG_SRC) $(PACKAGE_SRC); synth_$(RTL_SYN_Y_TARGET) -top $(TOP_MODULE) -json $@"
 YOSYS_PNR             = nextpnr-ice40
-ifeq ($(RTL_SYN_USES_CLOCK),yes)
+ifeq ($(RTL_SYN_USES_CLK),yes)
 YOSYS_PNR_FLAGS       = --$(RTL_SYN_Y_DEVICE) --json $(filter %.json, $^) --asc $@ --pre-pack $(filter %.clocks.py, $^)
 else
 YOSYS_PNR_FLAGS       = --$(RTL_SYN_Y_DEVICE) --json $(filter %.json, $^) --asc $@
@@ -61,7 +61,7 @@ YOSYS_PNR             = arachne-pnr
 YOSYS_PNR_FLAGS       = $< -d $(subst up,,$(subst hx,,$(subst lp,,$(RTL_SYN_Y_DEVICE)))) -o $@
 endif
 YOSYS_TIME_STA        = icetime
-ifeq ($(RTL_SYN_USES_CLOCK),yes)
+ifeq ($(RTL_SYN_USES_CLK),yes)
 YOSYS_TIME_STA_FLAGS  = -tmd $(RTL_SYN_Y_DEVICE) $(addprefix -c ,$(RTL_SYN_Y_CLK_MHZ)) -o $(SYN_DIR)/$(TOP_MODULE).v -r $@ $<
 else
 YOSYS_TIME_STA_FLAGS  = -tmd $(RTL_SYN_Y_DEVICE) -o $(SYN_DIR)/$(TOP_MODULE).v -r $@ $<
