@@ -5,9 +5,9 @@ on: [push, pull_request]
 jobs:
   lint-verilator:
     runs-on: self-hosted
+    container: m4j0rt0m/verilator:v1.08
     steps:
       - name: Verilator Lint Top
-        uses: docker://m4j0rt0m/verilator:v4.108
         env:
           TOP_MODULE: axi_spi_top
           RTL_LINTER: verilator
