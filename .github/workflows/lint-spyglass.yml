@@ -1,8 +1,16 @@
 name: lint-spyglass
 
 on:
-  push: [master, develop, release-*]
-  pull_request: [master, develop, release-*]
+  push:
+    branches:
+      - master
+      - develop
+      - release-*
+  pull_request:
+    branches:
+      - master
+      - develop
+      - release-*
 
 jobs:
   lint-spyglass:
