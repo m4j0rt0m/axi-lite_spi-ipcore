@@ -1,1 +1,3 @@
-# axi-lite_spi-ipcore
+# AXI-Lite SPI
+
+![](documentation/axi-spi.png)

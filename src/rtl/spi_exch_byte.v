@@ -147,7 +147,18 @@ module spi_exch_byte
             end
           endcase
         end
-        default:  fsm_exch_byte <=  StateInit;
+        default: begin
+          sclk_en_o         <=  DISABLED;
+          busy_o            <=  IDLE;
+          bitcount          <=  0;
+          buffer_r          <=  0;
+          buffer_w          <=  0;
+          ready_o           <=  LOW;
+          check_sdclk_edge  <=  POS_EDGE;
+          data_o            <=  0;
+          mosi_o            <=  HIGH;
+          fsm_exch_byte     <=  StateInit;
+        end
       endcase
     end
   end
