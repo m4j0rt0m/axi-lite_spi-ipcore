@@ -43,7 +43,7 @@ module ratio_clk
   output reg              ratio_clk_o;
 
   wire  [RATIO_WIDTH-1:0] ratio_limit = ({{(`_L_SUB_SIZE_(RATIO_WIDTH,1)){1'b0}},1'b1} << ratio_i) - ({{(`_L_SUB_SIZE_(RATIO_WIDTH,1)){1'b0}},1'b1});
-  reg   [RATIO_WIDTH-1:0] counter;
+  wire  [RATIO_WIDTH-1:0] counter;
 
   always @ (posedge clk_i, negedge arst_n_i) begin
     if(~arst_n_i) begin
@@ -53,7 +53,7 @@ module ratio_clk
     else begin
       if(~en_i) begin
         counter     <=  {RATIO_WIDTH{1'b0}};
-        ratio_clk_o <=  1'b0;
+        ratio_clk_o =  1'b0;
       end
       else begin
         if(counter >= ratio_limit) begin
