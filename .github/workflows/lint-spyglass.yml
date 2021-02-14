@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - release-*
+      - feature/ci
   pull_request:
     branches:
       - master
