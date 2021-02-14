@@ -1,0 +1,42 @@
+name: lint
+
+on: [push, pull_request]
+
+jobs:
+  lint-verilator:
+    runs-on: self-hosted
+    container: m4j0rt0m/verilator:v4.108
+    steps:
+      - uses: actions/checkout@v2
+      - name: Verilator Lint Top
+        env:
+          TOP_MODULE: axi_spi_top
+          RTL_LINTER: verilator
+        run: make lint
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - release-*
+      - feature/ci
+  pull_request:
+    branches:
+      - master
+      - develop
+      - release-*
+
+jobs:
+  lint-spyglass:
+    runs-on: [self-hosted, spyglass]
+    steps:
+      - uses: actions/checkout@v2
+      - name: SpyGlass Lint Top
+        env:
+          TOP_MODULE: axi_spi_top
+          RTL_LINTER: spyglass
+          RTL_LINTER_REMOTE: yes
+          RTL_LINTER_REMOTE_IP: epi02.bsc.es
+          RTL_ENV_SOURCE: /eda/env.sh
+        run: make lint      
