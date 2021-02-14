@@ -23,7 +23,6 @@ on:
 jobs:
   lint-spyglass:
     runs-on: [self-hosted, spyglass]
-    container: m4j0rt0m/spyglass_linter:v1.0
     steps:
       - uses: actions/checkout@v2
       - name: SpyGlass Lint Top
