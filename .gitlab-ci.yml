@@ -1,26 +1,27 @@
 image: ubuntu:18.04
 
-before_script:
-  - apt install iverilog python3 -y
-
 stages:
   - lint
-  - synthesis
-  - test
 
 lint:verilator:
+  image: m4j0rt0m/verilator:v4.108
   stage: lint
   needs: []
+  variables:
+    TOP_MODULE: axi_spi_top
+    RTL_LINTER: verilator
   script:
     - make lint
 
 lint:spyglass:
+  image: m4j0rt0m/spyglass_linter:v1.0
   stage: lint
   needs: []
-  only:
-    refs:
-      - develop
-      - /^release-.*$/
-      - merge_requests
+  variables:
+    TOP_MODULE: axi_spi_top
+    RTL_LINTER: spyglass
+    RTL_LINTER_REMOTE: no
+    RTL_LINTER_LICENSE: 27020@epi01.bsc.es
+    RTL_LINTER_ENV_SOURCE: /eda/env.sh
   script:
-    - make spyglass-lint
+    - make lint
