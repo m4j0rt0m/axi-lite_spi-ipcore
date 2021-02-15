@@ -2,6 +2,7 @@ image: ubuntu:18.04
 
 stages:
   - lint
+  - synthesis
 
 lint:verilator:
   image: m4j0rt0m/verilator:v4.108
@@ -30,3 +31,21 @@ lint:spyglass:
     expire_in: 1 week
     paths:
       - spyglass_output
+
+synthesis: yosys
+  image: m4j0rt0m/icestorm
+  stage: synthesis
+  tags:
+    - yosys
+  needs: []
+  variables:
+    TOP_MODULE: axi_spi_top
+    RTL_SYN_TOOLS: yosys
+    RTL_SYN_USES_CLK: yes
+    RTL_SYN_CLK_SRC: fixed_clk_i axi_aclk_i
+    RTL_SYN_Y_TARGET: ice40
+    RTL_SYN_Y_DEVICE: hx8k
+    RTL_SYN_Y_CLK_MHZ: 12 36
+    RTL_SYN_Y_PNR_TOOL: nextpnr
+  script:
+    - make rtl-synth
