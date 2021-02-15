@@ -41,7 +41,7 @@ synthesis:yosys:
   variables:
     TOP_MODULE: axi_spi_top
     RTL_SYN_TOOLS: yosys
-    RTL_SYN_USES_CLK: yes
+    RTL_SYN_USES_CLK: "yes"
     RTL_SYN_CLK_SRC: fixed_clk_i axi_aclk_i
     RTL_SYN_Y_TARGET: ice40
     RTL_SYN_Y_DEVICE: hx8k
