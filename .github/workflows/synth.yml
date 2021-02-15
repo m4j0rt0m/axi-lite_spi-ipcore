@@ -19,7 +19,6 @@ jobs:
           RTL_SYN_Q_CLK_MHZ: 50 150
         run: make rtl-synth
 
-jobs:
   synth-yosys:
     runs-on: self-hosted
     container: m4j0rt0m/icestorm:v1.0
