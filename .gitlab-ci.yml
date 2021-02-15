@@ -32,8 +32,8 @@ lint:spyglass:
     paths:
       - spyglass_output
 
-synthesis: yosys
-  image: m4j0rt0m/icestorm
+synthesis:yosys:
+  image: m4j0rt0m/icestorm:v1.0
   stage: synthesis
   tags:
     - yosys
