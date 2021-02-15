@@ -16,13 +16,22 @@ on:
 jobs:
   lint-spyglass:
     runs-on: [self-hosted, spyglass]
+    container: m4j0rt0m/spyglass_linter:v1.0
     steps:
       - uses: actions/checkout@v2
+      - name: Add SSH key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+          ssh-add ~/.ssh/id_rsa
+          ssh -T ${{ secrets.SERVER_IP }}
       - name: SpyGlass Lint Top
         env:
           TOP_MODULE: axi_spi_top
           RTL_LINTER: spyglass
           RTL_LINTER_REMOTE: yes
-          RTL_LINTER_REMOTE_IP: epi02.bsc.es
+          RTL_LINTER_REMOTE_IP: ${{ secrets.SERVER_IP }}
           RTL_ENV_SOURCE: /eda/env.sh
         run: make lint      
