@@ -21,7 +21,5 @@ lint:spyglass:
     TOP_MODULE: axi_spi_top
     RTL_LINTER: spyglass
     RTL_LINTER_REMOTE: no
-    RTL_LINTER_LICENSE: 27020@epi01.bsc.es
-    RTL_LINTER_ENV_SOURCE: /eda/env.sh
   script:
     - make lint
