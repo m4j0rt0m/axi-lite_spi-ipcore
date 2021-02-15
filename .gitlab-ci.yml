@@ -18,6 +18,8 @@ lint:verilator:
 lint:spyglass:
   image: m4j0rt0m/spyglass_linter:v1.0
   stage: lint
+  tags:
+    - spyglass
   needs: []
   variables:
     TOP_MODULE: axi_spi_top
