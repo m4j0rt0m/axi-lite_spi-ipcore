@@ -95,18 +95,18 @@ module axi_spi_ctrl
 
   /* regs and wires */
   wire  [DATA_WIDTH-1:0]  tx_data;
-  reg                     tx_req;
+  reg                     tx_req, tx_req_d;
   wire                    tx_resp;
-  reg                     tx_ack;
-  reg   [DATA_WIDTH-1:0]  rx_data;
-  reg                     rx_req;
+  reg                     tx_ack, tx_ack_d;
+  reg   [DATA_WIDTH-1:0]  rx_data, rx_data_d;
+  reg                     rx_req, rx_req_d;
   wire                    rx_ack;
-  reg   [DATA_WIDTH-1:0]  spi_send_data;
+  reg   [DATA_WIDTH-1:0]  spi_send_data, spi_send_data_d;
   wire  [DATA_WIDTH-1:0]  spi_recv_data;
-  reg                     spi_exchange;
+  reg                     spi_exchange, spi_exchange_d;
   wire                    spi_busy;
   wire                    spi_ready;
-  reg                     tx_ready;
+  reg                     tx_ready, tx_ready_d;
   wire                    rx_valid;
   wire                    rx_full;
   wire                    rx_empty;
@@ -115,14 +115,96 @@ module axi_spi_ctrl
   wire                    tx_empty;
 
   /* control state machine parameters */
-  reg [4:0] fsm_spi_ctrl;
+  reg [4:0] fsm_spi_ctrl, fsm_spi_ctrl_d;
     localparam  StateInit     = 5'b00000; //..initial state
     localparam  StateIdle     = 5'b00011; //..checks if there is data to be sent in tx fifo
     localparam  StatePullData = 5'b00101; //..pull data from tx fifo
     localparam  StateExchange = 5'b01001; //..exchange a byte
     localparam  StatePushData = 5'b10001; //..push data into rx fifo
 
-  /* control state machine */
+  /* control state machine: comb */
+  always @ (*) begin
+    spi_send_data_d = spi_send_data;
+    spi_exchange_d  = spi_exchange;
+    tx_ready_d      = tx_ready;
+    tx_req_d        = tx_req;
+    tx_ack_d        = tx_ack;
+    rx_req_d        = rx_req;
+    rx_data_d       = rx_data;
+    fsm_spi_ctrl_d  = fsm_spi_ctrl;
+    if(soft_rst_i) begin
+      spi_send_data_d = 0;
+      spi_exchange_d  = 0;
+      tx_ready_d      = 0;
+      tx_req_d        = 0;
+      tx_ack_d        = 0;
+      rx_req_d        = 0;
+      rx_data_d       = 0;
+      fsm_spi_ctrl_d  = StateInit;
+    end
+    else begin
+      case(fsm_spi_ctrl)
+        StateInit: begin
+          spi_send_data_d = 0;
+          spi_exchange_d  = 0;
+          tx_ready_d      = 0;
+          tx_req_d        = 0;
+          tx_ack_d        = 0;
+          rx_req_d        = 0;
+          rx_data_d       = 0;
+          fsm_spi_ctrl_d  = StateIdle;
+        end
+        StateIdle: begin
+          if(tx_valid & ~tx_ack) begin //..check if there is available data to be sent in tx fifo
+            tx_req_d        = 1'b1;
+            fsm_spi_ctrl_d  = StatePullData;
+          end
+          tx_ack_d  = 1'b0;
+        end
+        StatePullData: begin
+          if(tx_ready & ~spi_busy) begin //..wait until tx data is ready and spi_ctrl is free
+            spi_exchange_d  = 1'b1;
+            fsm_spi_ctrl_d  = StateExchange;
+          end
+          if(tx_resp) begin //..got data from tx fifo
+            spi_send_data_d = tx_data;
+            tx_ready_d      = 1'b1;
+            tx_req_d        = 1'b0;
+          end
+        end
+        StateExchange: begin
+          if(spi_ready) begin //..finished exchanging data
+            rx_data_d       = spi_recv_data;
+            rx_req_d        = 1'b1;
+            fsm_spi_ctrl_d  = StatePushData;
+          end
+          if(spi_busy) begin
+            tx_ready_d      = 1'b0;
+            spi_exchange_d  = 1'b0;
+          end
+        end
+        StatePushData: begin
+          if(rx_ack) begin
+            rx_req_d        = 1'b0;
+            tx_ack_d        = 1'b1; //..finished exchange process
+            fsm_spi_ctrl_d  = StateIdle;
+          end
+        end
+        default: begin
+          spi_send_data_d = 0;
+          spi_exchange_d  = 0;
+          tx_ready_d      = 0;
+          tx_req_d        = 0;
+          tx_ack_d        = 0;
+          rx_req_d        = 0;
+          rx_data_d       = 0;
+          fsm_spi_ctrl_d  = StateInit;
+        end
+      endcase
+    end
+  end
+
+  /* control state machine: seq */
   always @ (posedge clk_i, negedge arst_n_i) begin
     if(~arst_n_i) begin
       spi_send_data <= 0;
@@ -135,76 +217,14 @@ module axi_spi_ctrl
       fsm_spi_ctrl  <= StateInit;
     end
     else begin
-      if(soft_rst_i) begin
-        spi_send_data <= 0;
-        spi_exchange  <= 0;
-        tx_ready      <= 0;
-        tx_req        <= 0;
-        tx_ack        <= 0;
-        rx_req        <= 0;
-        rx_data       <= 0;
-        fsm_spi_ctrl  <= StateInit;
-      end
-      else begin
-        case(fsm_spi_ctrl)
-          StateInit: begin
-            spi_send_data <= 0;
-            spi_exchange  <= 0;
-            tx_ready      <= 0;
-            tx_req        <= 0;
-            tx_ack        <= 0;
-            rx_req        <= 0;
-            rx_data       <= 0;
-            fsm_spi_ctrl  <= StateIdle;
-          end
-          StateIdle: begin
-            if(tx_valid & ~tx_ack) begin //..check if there is available data to be sent in tx fifo
-              tx_req        <= 1'b1;
-              fsm_spi_ctrl  <= StatePullData;
-            end
-            tx_ack  <= 1'b0;
-          end
-          StatePullData: begin
-            if(tx_ready & ~spi_busy) begin //..wait until tx data is ready and spi_ctrl is free
-              spi_exchange  <= 1'b1;
-              fsm_spi_ctrl  <= StateExchange;
-            end
-            if(tx_resp) begin //..got data from tx fifo
-              spi_send_data <= tx_data;
-              tx_ready      <= 1'b1;
-              tx_req        <= 1'b0;
-            end
-          end
-          StateExchange: begin
-            if(spi_ready) begin //..finished exchanging data
-              rx_data       <= spi_recv_data;
-              rx_req        <= 1'b1;
-              fsm_spi_ctrl  <= StatePushData;
-            end
-            if(spi_busy) begin
-              tx_ready      <= 1'b0;
-              spi_exchange  <= 1'b0;
-            end
-          end
-          StatePushData: begin
-            if(rx_ack) begin
-              rx_req        <= 1'b0;
-              tx_ack        <= 1'b1; //..finished exchange process
-              fsm_spi_ctrl  <= StateIdle;
-            end
-          end
-          default: begin
-            spi_send_data <= 0;
-            spi_exchange  <= 0;
-            tx_ready      <= 0;
-            tx_req        <= 0;
-            tx_ack        <= 0;
-            rx_req        <= 0;
-            rx_data       <= 0;
-            fsm_spi_ctrl  <= StateInit;
-          end
-        endcase
-      end
+      spi_send_data <= spi_send_data_d;
+      spi_exchange  <= spi_exchange_d;
+      tx_ready      <= tx_ready_d;
+      tx_req        <= tx_req_d;
+      tx_ack        <= tx_ack_d;
+      rx_req        <= rx_req_d;
+      rx_data       <= rx_data_d;
+      fsm_spi_ctrl  <= fsm_spi_ctrl_d;
     end
   end
 
