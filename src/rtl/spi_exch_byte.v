@@ -28,24 +28,24 @@ module spi_exch_byte
    );
 
   /* clks */
-  input                   clk_i;
-  input                   arst_n_i;
-  input                   sclk_i;
+  input               clk_i;
+  input               arst_n_i;
+  input               sclk_i;
 
   /* ctrl */
-  input                   msb_lsb_sel_i;
-  input                   exchange_i;
-  output  reg             sclk_en_o ;
-  output  reg             busy_o ;
-  output  reg             ready_o ;
+  input               msb_lsb_sel_i;
+  input               exchange_i;
+  output              sclk_en_o ;
+  output              busy_o ;
+  output              ready_o ;
 
   /* data */
-  input       [BYTE-1:0]  data_i;
-  output  reg [BYTE-1:0]  data_o ;
+  input   [BYTE-1:0]  data_i;
+  output  [BYTE-1:0]  data_o ;
 
   /* mosi/miso */
-  input                   miso_i;
-  output  reg             mosi_o ;
+  input               miso_i;
+  output              mosi_o ;
 
   /* integers and genvars */
   genvar I;
@@ -63,103 +63,132 @@ module spi_exch_byte
   localparam  LSB       = 1'b1;
 
   /* state machine parameters */
-  reg [2:0] fsm_exch_byte;
+  reg [2:0] fsm_exch_byte, fsm_exch_byte_d;
     localparam  StateInit     = 3'b000;
     localparam  StateIdle     = 3'b011;
     localparam  StateExchange = 3'b101;
 
   /* regs and wires */
-  reg   [BYTE-1:0]  buffer_r;
-  reg   [BYTE-1:0]  buffer_w;
-  reg   [BYTE-1:0]  bitcount;
-  reg               check_sdclk_edge ;
+  reg               sclk_en, sclk_en_d;
+  reg               busy, busy_d;
+  reg               ready, ready_d;
+  reg   [BYTE-1:0]  data, data_d;
+  reg               mosi, mosi_d;
+  reg   [BYTE-1:0]  buffer_r, buffer_r_d;
+  reg   [BYTE-1:0]  buffer_w, buffer_w_d;
+  reg   [BYTE-1:0]  bitcount, bitcount_d;
+  reg               check_sdclk_edge, check_sdclk_edge_d;
   wire  [BYTE-1:0]  data_s; //..data to be send
   wire  [BYTE-1:0]  data_r; //..data received
   wire  [BYTE-1:0]  data_s_i;
   wire  [BYTE-1:0]  buffer_r_n;
 
-  /* state machine */
+  /* state machine: comb */
+  always @ (*)  begin
+    sclk_en_d           = sclk_en;
+    busy_d              = busy;
+    bitcount_d          = bitcount;
+    buffer_r_d          = buffer_r;
+    buffer_w_d          = buffer_w;
+    ready_d             = ready;
+    check_sdclk_edge_d  = check_sdclk_edge;
+    data_d              = data;
+    mosi_d              = mosi;
+    fsm_exch_byte_d     = fsm_exch_byte;
+    case(fsm_exch_byte)
+      StateInit:  begin
+        sclk_en_d           = DISABLED;
+        busy_d              = IDLE;
+        bitcount_d          = 0;
+        buffer_r_d          = 0;
+        buffer_w_d          = 0;
+        ready_d             = LOW;
+        data_d              = 0;
+        check_sdclk_edge_d  = POS_EDGE;
+        mosi_d              = HIGH;
+        fsm_exch_byte_d     = StateIdle;
+      end
+      StateIdle:  begin
+        if(exchange_i)  begin
+          sclk_en_d           = ENABLED;
+          busy_d              = BUSY;
+          bitcount_d          = 0;
+          check_sdclk_edge_d  = POS_EDGE;
+          buffer_w_d          = data_s;
+          mosi_d              = data_s[0];
+          fsm_exch_byte_d     = StateExchange;
+        end
+        ready_d = LOW;
+      end
+      StateExchange:  begin
+        case(check_sdclk_edge)
+          POS_EDGE: begin
+            if(sclk_i)  begin
+              buffer_r_d[BYTE-1]    = miso_i;
+              buffer_r_d[BYTE-2:0]  = buffer_r[BYTE-1:1];
+              check_sdclk_edge_d    = NEG_EDGE;
+            end
+          end
+          NEG_EDGE: begin
+            if(~sclk_i) begin
+              bitcount_d          = bitcount + 1;
+              check_sdclk_edge_d  = POS_EDGE;
+              if(&bitcount[2:0])  begin
+                sclk_en_d       = DISABLED;
+                busy_d          = IDLE;
+                data_d          = data_r;
+                mosi_d          = HIGH;
+                ready_d         = HIGH;
+                fsm_exch_byte_d = StateIdle;
+              end
+              else  begin
+                mosi_d          = buffer_w[1];
+                buffer_w_d[6:1] = buffer_w[7:2];
+              end
+            end
+          end
+        endcase
+      end
+      default: begin
+        sclk_en_d           = DISABLED;
+        busy_d              = IDLE;
+        bitcount_d          = 0;
+        buffer_r_d          = 0;
+        buffer_w_d          = 0;
+        ready_d             = LOW;
+        check_sdclk_edge_d  = POS_EDGE;
+        data_d              = 0;
+        mosi_d              = HIGH;
+        fsm_exch_byte_d     = StateInit;
+      end
+    endcase
+  end
+
+  /* state machine: seq */
   always @ (posedge clk_i, negedge arst_n_i)  begin
     if(~arst_n_i) begin
-      sclk_en_o         <=  DISABLED;
-      busy_o            <=  IDLE;
+      sclk_en           <=  DISABLED;
+      busy              <=  IDLE;
       bitcount          <=  0;
       buffer_r          <=  0;
       buffer_w          <=  0;
-      ready_o           <=  LOW;
+      ready             <=  LOW;
       check_sdclk_edge  <=  POS_EDGE;
-      data_o            <=  0;
-      mosi_o            <=  HIGH;
+      data              <=  0;
+      mosi              <=  HIGH;
       fsm_exch_byte     <=  StateInit;
     end
     else  begin
-      case(fsm_exch_byte)
-        StateInit:  begin
-          sclk_en_o         <=  DISABLED;
-          busy_o            <=  IDLE;
-          bitcount          <=  0;
-          buffer_r          <=  0;
-          buffer_w          <=  0;
-          ready_o           <=  LOW;
-          data_o            <=  0;
-          check_sdclk_edge  <=  POS_EDGE;
-          mosi_o            <=  HIGH;
-          fsm_exch_byte     <=  StateIdle;
-        end
-        StateIdle:  begin
-          if(exchange_i)  begin
-            sclk_en_o         <=  ENABLED;
-            busy_o            <=  BUSY;
-            bitcount          <=  0;
-            check_sdclk_edge  <=  POS_EDGE;
-            buffer_w          <=  data_s;
-            mosi_o            <=  data_s[0];
-            fsm_exch_byte     <=  StateExchange;
-          end
-          ready_o <=  LOW;
-        end
-        StateExchange:  begin
-          case(check_sdclk_edge)
-            POS_EDGE: begin
-              if(sclk_i)  begin
-                buffer_r[BYTE-1]    <=  miso_i;
-                buffer_r[BYTE-2:0]  <=  buffer_r[BYTE-1:1];
-                check_sdclk_edge    <=  NEG_EDGE;
-              end
-            end
-            NEG_EDGE: begin
-              if(~sclk_i) begin
-                bitcount          <=  bitcount + 1;
-                check_sdclk_edge  <=  POS_EDGE;
-                if(&bitcount[2:0])  begin
-                  sclk_en_o     <=  DISABLED;
-                  busy_o        <=  IDLE;
-                  data_o        <=  data_r;
-                  mosi_o        <=  HIGH;
-                  ready_o       <=  HIGH;
-                  fsm_exch_byte <=  StateIdle;
-                end
-                else  begin
-                  mosi_o        <=  buffer_w[1];
-                  buffer_w[6:1] <=  buffer_w[7:2];
-                end
-              end
-            end
-          endcase
-        end
-        default: begin
-          sclk_en_o         <=  DISABLED;
-          busy_o            <=  IDLE;
-          bitcount          <=  0;
-          buffer_r          <=  0;
-          buffer_w          <=  0;
-          ready_o           <=  LOW;
-          check_sdclk_edge  <=  POS_EDGE;
-          data_o            <=  0;
-          mosi_o            <=  HIGH;
-          fsm_exch_byte     <=  StateInit;
-        end
-      endcase
+      sclk_en           <=  sclk_en_d;
+      busy              <=  busy_d;
+      bitcount          <=  bitcount_d;
+      buffer_r          <=  buffer_r_d;
+      buffer_w          <=  buffer_w_d;
+      ready             <=  ready_d;
+      check_sdclk_edge  <=  check_sdclk_edge_d;
+      data              <=  data_d;
+      mosi              <=  mosi_d;
+      fsm_exch_byte     <=  fsm_exch_byte_d;
     end
   end
 
@@ -172,5 +201,13 @@ module spi_exch_byte
   endgenerate
   assign  data_s  = (msb_lsb_sel_i==MSB) ? data_s_i   : data_i;
   assign  data_r  = (msb_lsb_sel_i==MSB) ? buffer_r_n : buffer_r;
+
+  /* output assignments */
+  assign sclk_en_o  = sclk_en;
+  assign busy_o     = busy;
+  assign ready_o    = ready;
+  assign data_o     = data;
+  assign mosi_o     = mosi;
+
 
 endmodule

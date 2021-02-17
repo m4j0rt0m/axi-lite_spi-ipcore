@@ -13,3 +13,10 @@
 #waive -du {  {spi_exch_byte} }  -msg {Combinational and sequential parts of an FSM 'spi_exch_byte.check_sdclk_edge' described in same always block} -rule {  {STARC05-2.11.3.1}  }
 #waive -du {  {spi_fifo}      }  -msg {Combinational and sequential parts of an FSM 'spi_fifo.fsm_fifo_wr' described in same always block} -rule {  {STARC05-2.11.3.1}  }
 #waive -du {  {spi_fifo}      }  -msg {Combinational and sequential parts of an FSM 'spi_fifo.fsm_fifo_rd' described in same always block} -rule {  {STARC05-2.11.3.1}  }
+
+waive -du {  {axi_spi_ctrl}  }  -msg {  Input 'control_cpha_i' declared but not read.[Hierarchy: ':axi_spi_top:axi_spi_ctrl_i0@axi_spi_ctrl']        }  -rule {  {W240}  }
+waive -du {  {axi_spi_ctrl}  }  -msg {  Input 'control_cpol_i' declared but not read.[Hierarchy: ':axi_spi_top:axi_spi_ctrl_i0@axi_spi_ctrl']        }  -rule {  {W240}  }
+waive -du {  {axi_spi_ctrl}  }  -msg {  Input 'control_spi_enable_i' declared but not read.[Hierarchy: ':axi_spi_top:axi_spi_ctrl_i0@axi_spi_ctrl']  }  -rule {  {W240}  }
+waive -du {  {axi_spi_top}   }  -msg {  Input 'axi_rready_i' declared but not read.[Hierarchy: ':axi_spi_top']                                       }  -rule {  {W240}  }
+waive -du {  {axi_spi_top}   }  -msg {  Input 'axi_bready_i' declared but not read.[Hierarchy: ':axi_spi_top']                                       }  -rule {  {W240}  }
+waive -du {  {axi_spi_ctrl}  }  -msg {  Variable 'rx_valid' set but not read.[Hierarchy: ':axi_spi_top:axi_spi_ctrl_i0@axi_spi_ctrl']                }  -rule {  {W528}  }
