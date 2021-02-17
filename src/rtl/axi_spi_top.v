@@ -128,59 +128,59 @@ module axi_spi_top
   genvar I;
 
   /* regs and wires declarations */
-  reg                         soft_reset;       //..spi control soft reset (by software or deadlock)
-  wire                        axi_wren;         //..axi-transaction write enable
-  wire                        axi_nwren;        //..axi-transaction write disable
-  wire                        axi_rden;         //..axi-transaction read enable
-  wire                        axi_nrden;        //..axi-transaction read disable
-  wire                        axi_wrresp;       //..axi-transaction write valid response
-  wire                        axi_nwrresp;      //..axi-transaction write finished response
-  wire                        axi_rdresp;       //..axi-transaction read valid response
-  wire                        axi_nrdresp;      //..axi-transaction read finished response
-  reg                         axi_sync_wren;    //..write axi-transaction synchronizer between clock domains
-  reg                         axi_sync_rden;    //..read axi-transaction synchronizer between clock domains
-  reg   [DEADLOCK_WIDTH:0]    wr_deadlock_cnt;  //..write deadlock counter
-  reg   [DEADLOCK_WIDTH:0]    rd_deadlock_cnt;  //..read deadlock counter
-  reg                         wr_deadlock;      //..write deadlock counter enable
-  reg                         rd_deadlock;      //..read deadlock counter enable
-  reg                         wr_timeout;       //..write deadlock timeout
-  reg                         rd_timeout;       //..read deadlock timeout
-  wire  [AXI_DATA_WIDTH-1:0]  write_data;       //..write data after byte enable
+  reg                         soft_reset, soft_reset_d;                     //..spi control soft reset (by software or deadlock)
+  wire                        axi_wren;                       //..axi-transaction write enable
+  wire                        axi_nwren;                      //..axi-transaction write disable
+  wire                        axi_rden;                       //..axi-transaction read enable
+  wire                        axi_nrden;                      //..axi-transaction read disable
+  wire                        axi_wrresp;                     //..axi-transaction write valid response
+  wire                        axi_nwrresp;                    //..axi-transaction write finished response
+  wire                        axi_rdresp;                     //..axi-transaction read valid response
+  wire                        axi_nrdresp;                    //..axi-transaction read finished response
+  reg                         axi_sync_wren, axi_sync_wren_d; //..write axi-transaction synchronizer between clock domains
+  reg                         axi_sync_rden, axi_sync_rden_d; //..read axi-transaction synchronizer between clock domains
+  reg   [DEADLOCK_WIDTH:0]    wr_deadlock_cnt;                //..write deadlock counter
+  reg   [DEADLOCK_WIDTH:0]    rd_deadlock_cnt;                //..read deadlock counter
+  reg                         wr_deadlock, wr_deadlock_d;                    //..write deadlock counter enable
+  reg                         rd_deadlock, rd_deadlock_d;            //..read deadlock counter enable
+  reg                         wr_timeout;                     //..write deadlock timeout
+  reg                         rd_timeout;                     //..read deadlock timeout
+  wire  [AXI_DATA_WIDTH-1:0]  write_data;                     //..write data after byte enable
 
   /* axi interface registers declarations */
-  reg                         axi_awready;  //..aw  channel - ready
-  reg                         axi_wready;   //..w   channel - ready
-  reg   [AXI_ID_WIDTH-1:0]    axi_bid;      //..b   channel - id
-  reg   [AXI_RESP_WIDTH-1:0]  axi_bresp;    //..b   channel - resp
-  reg                         axi_bvalid;   //..b   channel - valid
-  reg                         axi_arready;  //..ar  channel - ready
-  reg   [AXI_ID_WIDTH-1:0]    axi_rid;      //..r   channel - id
-  reg   [AXI_DATA_WIDTH-1:0]  axi_rdata;    //..r   channel - data
-  reg   [AXI_RESP_WIDTH-1:0]  axi_rresp;    //..r   channel - resp
-  reg                         axi_rvalid;   //..r   channel - valid
+  reg                         axi_awready, axi_awready_d;     //..aw  channel - ready
+  reg                         axi_wready, axi_wready_d;       //..w   channel - ready
+  reg   [AXI_ID_WIDTH-1:0]    axi_bid, axi_bid_d;             //..b   channel - id
+  reg   [AXI_RESP_WIDTH-1:0]  axi_bresp, axi_bresp_d;         //..b   channel - resp
+  reg                         axi_bvalid, axi_bvalid_d;       //..b   channel - valid
+  reg                         axi_arready, axi_arready_d;     //..ar  channel - ready
+  reg   [AXI_ID_WIDTH-1:0]    axi_rid, axi_rid_d;             //..r   channel - id
+  reg   [AXI_DATA_WIDTH-1:0]  axi_rdata, axi_rdata_d;         //..r   channel - data
+  reg   [AXI_RESP_WIDTH-1:0]  axi_rresp, axi_rresp_d;         //..r   channel - resp
+  reg                         axi_rvalid, axi_rvalid_d;       //..r   channel - valid
 
   /* axi4-spi regs (SRR isn't available for r/w, a "0x0a" write operation triggers a soft ip-reset though) */
-  reg   [AXI_DATA_WIDTH-1:0]  spi_control_reg;              //..SPI_CR
-  wire  [AXI_DATA_WIDTH-1:0]  spi_status_reg;               //..SPI_SR
-  reg   [DATA_WIDTH_SPI-1:0]  spi_tx_fifo_data;             //..SPI_DTR.data
-  reg                         spi_tx_fifo_req;              //..SPI_DTR.request write
-  wire                        spi_tx_fifo_ack;              //..SPI_DTR.acknowledge
-  wire  [DATA_WIDTH_SPI-1:0]  spi_rx_fifo_data;             //..SPI_DRR.data
-  reg                         spi_rx_fifo_req;              //..SPI_DRR.request read
-  wire                        spi_rx_fifo_resp;             //..SPI_DRR.request response
-  reg                         spi_rx_fifo_ack;              //..SPI_DRR.request acknowledge
-  reg   [AXI_DATA_WIDTH-1:0]  spi_slave_select_reg;         //..SPI_SSR
-  wire  [AXI_DATA_WIDTH-1:0]  spi_tx_fifo_occupancy_reg;    //..SPI_TFOR
-  wire  [AXI_DATA_WIDTH-1:0]  spi_rx_fifo_occupancy_reg;    //..SPI_RFOR
-  reg   [AXI_DATA_WIDTH-1:0]  spi_global_interrupt_en_reg;  //..SPI_GIER..(not implemented)
-  reg   [AXI_DATA_WIDTH-1:0]  spi_interrupt_status_reg;     //..SPI_ISR..(not implemented)
-  reg   [AXI_DATA_WIDTH-1:0]  spi_interrupt_enable_reg;     //..SPI_IER..(not implemented)
-  reg   [SPI_RATIO_GRADE-1:0] spi_ratio_reg;                //..SPI_RCLK..(custom -> clk-spi_clk ratio)
-                                                            //    0:  1/2
-                                                            //    1:  1/4
-                                                            //    2:  1/8
-                                                            //    3:  1/16 ...
-                                                            //    until SPI_RATIO_GRADE
+  reg   [AXI_DATA_WIDTH-1:0]  spi_control_reg, spi_control_reg_d;                         //..SPI_CR
+  wire  [AXI_DATA_WIDTH-1:0]  spi_status_reg;                                             //..SPI_SR
+  reg   [DATA_WIDTH_SPI-1:0]  spi_tx_fifo_data, spi_tx_fifo_data_d;                       //..SPI_DTR.data
+  reg                         spi_tx_fifo_req, spi_tx_fifo_req_d;                         //..SPI_DTR.request write
+  wire                        spi_tx_fifo_ack;                                            //..SPI_DTR.acknowledge
+  wire  [DATA_WIDTH_SPI-1:0]  spi_rx_fifo_data;                                           //..SPI_DRR.data
+  reg                         spi_rx_fifo_req, spi_rx_fifo_req_d;                         //..SPI_DRR.request read
+  wire                        spi_rx_fifo_resp;                                           //..SPI_DRR.request response
+  reg                         spi_rx_fifo_ack, spi_rx_fifo_ack_d;                         //..SPI_DRR.request acknowledge
+  reg   [AXI_DATA_WIDTH-1:0]  spi_slave_select_reg, spi_slave_select_reg_d;               //..SPI_SSR
+  wire  [AXI_DATA_WIDTH-1:0]  spi_tx_fifo_occupancy_reg;                                  //..SPI_TFOR
+  wire  [AXI_DATA_WIDTH-1:0]  spi_rx_fifo_occupancy_reg;                                  //..SPI_RFOR
+  reg   [AXI_DATA_WIDTH-1:0]  spi_global_interrupt_en_reg, spi_global_interrupt_en_reg_d; //..SPI_GIER..(not implemented)
+  reg   [AXI_DATA_WIDTH-1:0]  spi_interrupt_status_reg, spi_interrupt_status_reg_d;       //..SPI_ISR..(not implemented)
+  reg   [AXI_DATA_WIDTH-1:0]  spi_interrupt_enable_reg, spi_interrupt_enable_reg_d;       //..SPI_IER..(not implemented)
+  reg   [SPI_RATIO_GRADE-1:0] spi_ratio_reg, spi_ratio_reg_d;                             //..SPI_RCLK..(custom -> clk-spi_clk ratio)
+                                                                                          //    0:  1/2
+                                                                                          //    1:  1/4
+                                                                                          //    2:  1/8
+                                                                                          //    3:  1/16 ...
+                                                                                          //    until SPI_RATIO_GRADE
 
   /* axi-transaction start-end enable assignments */
   assign axi_wren     = axi_awvalid_i & axi_wvalid_i;
@@ -194,36 +194,46 @@ module axi_spi_top
   assign axi_rdresp   = axi_arready;
   assign axi_nrdresp  = ~(axi_arready | axi_rvalid);
 
-  /* axi-transaction synchronizer - write */
-  always @ (posedge axi_aclk_i, negedge axi_aresetn_i) begin
-    if(~axi_aresetn_i)
-      axi_sync_wren <= 1'b0;
+  /* axi-transaction synchronizer - write: comb */
+  always @ (*) begin
+    axi_sync_wren_d = axi_sync_wren;
+    if(wr_timeout)
+      axi_sync_wren_d = 1'b0;
     else begin
-      if(wr_timeout)
-        axi_sync_wren <= 1'b0;
-      else begin
-        case(axi_sync_wren)
-          1'b0: axi_sync_wren <= (axi_nwren & axi_wrresp) ? 1'b1 : 1'b0;
-          1'b1: axi_sync_wren <= (axi_nwrresp) ? 1'b0 : 1'b1;
-        endcase
-      end
+      case(axi_sync_wren)
+        1'b0: axi_sync_wren_d = (axi_nwren & axi_wrresp) ? 1'b1 : 1'b0;
+        1'b1: axi_sync_wren_d = (axi_nwrresp) ? 1'b0 : 1'b1;
+      endcase
     end
   end
 
-  /* axi-transaction synchronizer - read */
+  /* axi-transaction synchronizer - write: seq */
+  always @ (posedge axi_aclk_i, negedge axi_aresetn_i) begin
+    if(~axi_aresetn_i)
+      axi_sync_wren <= 1'b0;
+    else
+      axi_sync_wren <= axi_sync_wren_d;
+  end
+
+  /* axi-transaction synchronizer - read: comb */
+  always @ (*) begin
+    axi_sync_rden_d = axi_sync_rden;
+    if(rd_timeout)
+      axi_sync_rden_d = 1'b0;
+    else begin
+      case(axi_sync_rden)
+        1'b0: axi_sync_rden_d = (axi_nrden & axi_rdresp) ? 1'b1 : 1'b0;
+        1'b1: axi_sync_rden_d = (axi_nrdresp) ? 1'b0 : 1'b1;
+      endcase
+    end
+  end
+
+  /* axi-transaction synchronizer - read: seq */
   always @ (posedge axi_aclk_i, negedge axi_aresetn_i) begin
     if(~axi_aresetn_i)
       axi_sync_rden <= 1'b0;
-    else begin
-      if(rd_timeout)
-        axi_sync_rden <= 1'b0;
-      else begin
-        case(axi_sync_rden)
-          1'b0: axi_sync_rden <= (axi_nrden & axi_rdresp) ? 1'b1 : 1'b0;
-          1'b1: axi_sync_rden <= (axi_nrdresp) ? 1'b0 : 1'b1;
-        endcase
-      end
-    end
+    else
+      axi_sync_rden <= axi_sync_rden_d;
   end
 
   /* axi responses assignments */
@@ -246,7 +256,7 @@ module axi_spi_top
   endgenerate
 
   /* axi slave interface write fsm parameters */
-  reg [4:0] fsm_axi_wr;
+  reg [4:0] fsm_axi_wr, fsm_axi_wr_d;
     localparam  StateInitWr     = 5'b00000;
     localparam  StateResetWr    = 5'b00011;
     localparam  StateIdleWr     = 5'b00101;
@@ -254,14 +264,187 @@ module axi_spi_top
     localparam  StateResponseWr = 5'b10001;
 
   /* axi slave interface read fsm parameters */
-  reg [2:0] fsm_axi_rd;
+  reg [2:0] fsm_axi_rd, fsm_axi_rd_d;
     localparam  StateInitRd     = 3'b000;
     localparam  StateIdleRd     = 3'b011;
     localparam  StateResponseRd = 3'b101;
 
-  /* axi slave fsm - write interface */
-  always @ (posedge fixed_clk_i, negedge axi_aresetn_i)  begin
-    if(~axi_aresetn_i)  begin
+  /* axi slave fsm - write interface: comb */
+  always @ (*) begin
+    axi_awready_d                 = axi_awready;
+    axi_wready_d                  = axi_wready;
+    axi_bresp_d                   = axi_bresp;
+    axi_bvalid_d                  = axi_bvalid;
+    axi_bid_d                     = axi_bid;
+    spi_control_reg_d             = spi_control_reg;
+    spi_slave_select_reg_d        = spi_slave_select_reg;
+    spi_global_interrupt_en_reg_d = spi_global_interrupt_en_reg;
+    spi_interrupt_status_reg_d    = spi_interrupt_status_reg;
+    spi_interrupt_enable_reg_d    = spi_interrupt_enable_reg;
+    spi_ratio_reg_d               = spi_ratio_reg;
+    soft_reset_d                  = soft_reset;
+    wr_deadlock_d                 = wr_deadlock;
+    spi_tx_fifo_data_d            = spi_tx_fifo_data;
+    spi_tx_fifo_req_d             = spi_tx_fifo_req;
+    fsm_axi_wr_d                  = fsm_axi_wr;
+    case(fsm_axi_wr)
+      StateInitWr: begin      //..reset axi regs
+        axi_awready_d                 = 1'b0;
+        axi_wready_d                  = 1'b0;
+        axi_bresp_d                   = {AXI_RESP_WIDTH{1'b0}};
+        axi_bvalid_d                  = 1'b0;
+        axi_bid_d                     = {AXI_ID_WIDTH{1'b0}};
+        spi_control_reg_d             = SPI_CR_INIT;
+        spi_slave_select_reg_d        = SPI_SSR_INIT;
+        spi_global_interrupt_en_reg_d = SPI_GIER_INIT;
+        spi_interrupt_status_reg_d    = SPI_ISR_INIT;
+        spi_interrupt_enable_reg_d    = SPI_IER_INIT;
+        spi_ratio_reg_d               = SPI_RCLK_INIT;
+        soft_reset_d                  = 1'b1;
+        wr_deadlock_d                 = 1'b0;
+        spi_tx_fifo_data_d            = {DATA_WIDTH_SPI{1'b0}};
+        spi_tx_fifo_req_d             = 0;
+        fsm_axi_wr_d                  = StateResetWr;
+      end
+      StateResetWr: begin
+        axi_awready_d                 = 1'b0;
+        axi_wready_d                  = 1'b0;
+        axi_bresp_d                   = {AXI_RESP_WIDTH{1'b0}};
+        axi_bvalid_d                  = 1'b0;
+        axi_bid_d                     = {AXI_ID_WIDTH{1'b0}};
+        spi_control_reg_d             = SPI_CR_INIT;
+        spi_slave_select_reg_d        = SPI_SSR_INIT;
+        spi_global_interrupt_en_reg_d = SPI_GIER_INIT;
+        spi_interrupt_status_reg_d    = SPI_ISR_INIT;
+        spi_interrupt_enable_reg_d    = SPI_IER_INIT;
+        spi_ratio_reg_d               = SPI_RCLK_INIT;
+        soft_reset_d                  = 1'b0;
+        wr_deadlock_d                 = 1'b0;
+        spi_tx_fifo_data_d            = {DATA_WIDTH_SPI{1'b0}};
+        spi_tx_fifo_req_d             = 0;
+        fsm_axi_wr_d                  = StateIdleWr;
+      end
+      StateIdleWr: begin
+        if(axi_wren) begin //..write operation
+          /* update data */
+          case(axi_awaddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
+            SPI_GIER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: spi_global_interrupt_en_reg_d = write_data;
+            SPI_ISR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  spi_interrupt_status_reg_d    = spi_interrupt_status_reg ^ write_data;
+            SPI_IER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  spi_interrupt_enable_reg_d    = write_data;
+            SPI_CR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:   spi_control_reg_d             = write_data;
+            SPI_DTR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: begin
+              spi_tx_fifo_data_d  = write_data[DATA_WIDTH_SPI-1:0];
+              if(spi_tx_fifo_ack)
+                spi_tx_fifo_req_d = 0;
+              else
+                spi_tx_fifo_req_d = 1;
+            end
+            SPI_SSR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  spi_slave_select_reg_d        = write_data;
+            SPI_RCLK[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: spi_ratio_reg_d               = write_data[SPI_RATIO_GRADE-1:0];
+            default: begin
+              spi_global_interrupt_en_reg_d = spi_global_interrupt_en_reg;
+              spi_interrupt_status_reg_d    = spi_interrupt_status_reg;
+              spi_interrupt_enable_reg_d    = spi_interrupt_enable_reg;
+              spi_control_reg_d             = spi_control_reg;
+              spi_tx_fifo_data_d            = spi_tx_fifo_data;
+              spi_tx_fifo_req_d             = spi_tx_fifo_req;
+              spi_slave_select_reg_d        = spi_slave_select_reg;
+              spi_ratio_reg_d               = spi_ratio_reg;
+            end
+          endcase
+          /* change state */
+          case(axi_awaddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
+            SPI_DTR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: begin //..add an entry into the TX fifo if there is a free slot
+              if(spi_tx_fifo_ack) begin
+                axi_awready_d = 1'b1;                   //..write address transaction acknowledge
+                axi_wready_d  = 1'b1;                   //..write data transaction acknowledge
+                axi_bresp_d   = {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
+                axi_bvalid_d  = 1'b1;                   //..write response valid
+                axi_bid_d     = axi_awid_i;             //..write transaction id
+                fsm_axi_wr_d  = StateResponseWr;
+              end
+            end
+            SPI_SRR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: begin //..check for "0x0000000a", then reset axi spi reg values
+              if(write_data==SPI_SRR_VALUE)
+                soft_reset_d    = 1'b1;                 //..soft reset asserted
+              axi_awready_d = 1'b1;                   //..write address transaction acknowledge
+              axi_wready_d  = 1'b1;                   //..write data transaction acknowledge
+              axi_bresp_d   = {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
+              axi_bvalid_d  = 1'b1;                   //..write response valid
+              axi_bid_d     = axi_awid_i;             //..write transaction id
+              fsm_axi_wr_d  = StateResponseWr;
+            end
+            SPI_CR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  begin //..update control (just clear fifo reset bits)
+              fsm_axi_wr_d  = StateControlWr;
+            end
+            default: begin //..assert "request_finished" signal
+              axi_awready_d = 1'b1;                   //..write address transaction acknowledge
+              axi_wready_d  = 1'b1;                   //..write data transaction acknowledge
+              axi_bresp_d   = {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
+              axi_bvalid_d  = 1'b1;                   //..write response valid
+              axi_bid_d     = axi_awid_i;             //..write transaction id
+              fsm_axi_wr_d  = StateResponseWr;
+            end
+          endcase
+        end
+        wr_deadlock_d = 1'b0;
+      end
+      StateControlWr: begin
+        spi_control_reg_d[CR_TX_FIFO_RESET_BIT] = 1'b0;
+        spi_control_reg_d[CR_RX_FIFO_RESET_BIT] = 1'b0;
+        axi_awready_d                           = 1'b1;                   //..write address transaction acknowledge
+        axi_wready_d                            = 1'b1;                   //..write data transaction acknowledge
+        axi_bresp_d                             = {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
+        axi_bvalid_d                            = 1'b1;                   //..write response valid
+        axi_bid_d                               = axi_awid_i;             //..write transaction id
+        wr_deadlock_d                           = 1'b0;
+        fsm_axi_wr_d                            = StateResponseWr;
+      end
+      StateResponseWr: begin
+        if(axi_nwren) begin //..wait for the write transaction to finish
+          if(soft_reset)
+            fsm_axi_wr_d  = StateResetWr;
+          else
+            fsm_axi_wr_d  = StateIdleWr;
+          axi_bid_d = {AXI_ID_WIDTH{1'b0}};
+        end
+        else if(wr_timeout)
+          fsm_axi_wr_d  = StateInitWr;
+        /* clear ready and valid bits for every channel */
+        // if(~axi_wvalid_i)
+        axi_wready_d  = 1'b0;
+        // if(~axi_awvalid_i)
+        axi_awready_d = 1'b0;
+        // if(axi_bready_i)
+        axi_bvalid_d  = 1'b0;
+        axi_bresp_d   = {AXI_RESP_WIDTH{1'b0}};
+        /* deadlock-free */
+        wr_deadlock_d = 1'b1;
+      end
+      default: begin
+        axi_awready_d                 = 1'b0;
+        axi_wready_d                  = 1'b0;
+        axi_bresp_d                   = {AXI_RESP_WIDTH{1'b0}};
+        axi_bvalid_d                  = 1'b0;
+        axi_bid_d                     = {AXI_ID_WIDTH{1'b0}};
+        spi_control_reg_d             = SPI_CR_INIT;
+        spi_slave_select_reg_d        = SPI_SSR_INIT;
+        spi_global_interrupt_en_reg_d = SPI_GIER_INIT;
+        spi_interrupt_status_reg_d    = SPI_ISR_INIT;
+        spi_interrupt_enable_reg_d    = SPI_IER_INIT;
+        spi_ratio_reg_d               = SPI_RCLK_INIT;
+        soft_reset_d                  = 1'b1;
+        wr_deadlock_d                 = 1'b0;
+        spi_tx_fifo_data_d            = {DATA_WIDTH_SPI{1'b0}};
+        spi_tx_fifo_req_d             = 0;
+        fsm_axi_wr_d                  = StateInitWr;
+      end
+    endcase
+  end
+
+  /* axi slave fsm - write interface: seq */
+  always @ (posedge fixed_clk_i, negedge axi_aresetn_i) begin
+    if(~axi_aresetn_i) begin
       axi_awready                 <= 1'b0;
       axi_wready                  <= 1'b0;
       axi_bresp                   <= {AXI_RESP_WIDTH{1'b0}};
@@ -279,166 +462,128 @@ module axi_spi_top
       spi_tx_fifo_req             <= 0;
       fsm_axi_wr                  <= StateInitWr;
     end
-    else  begin
-      case(fsm_axi_wr)
-        StateInitWr:  begin      //..reset axi regs
-          axi_awready                 <= 1'b0;
-          axi_wready                  <= 1'b0;
-          axi_bresp                   <= {AXI_RESP_WIDTH{1'b0}};
-          axi_bvalid                  <= 1'b0;
-          axi_bid                     <= {AXI_ID_WIDTH{1'b0}};
-          spi_control_reg             <= SPI_CR_INIT;
-          spi_slave_select_reg        <= SPI_SSR_INIT;
-          spi_global_interrupt_en_reg <= SPI_GIER_INIT;
-          spi_interrupt_status_reg    <= SPI_ISR_INIT;
-          spi_interrupt_enable_reg    <= SPI_IER_INIT;
-          spi_ratio_reg               <= SPI_RCLK_INIT;
-          soft_reset                  <= 1'b1;
-          wr_deadlock                 <= 1'b0;
-          spi_tx_fifo_data            <= {DATA_WIDTH_SPI{1'b0}};
-          spi_tx_fifo_req             <= 0;
-          fsm_axi_wr                  <= StateResetWr;
-        end
-        StateResetWr: begin
-          axi_awready                 <= 1'b0;
-          axi_wready                  <= 1'b0;
-          axi_bresp                   <= {AXI_RESP_WIDTH{1'b0}};
-          axi_bvalid                  <= 1'b0;
-          axi_bid                     <= {AXI_ID_WIDTH{1'b0}};
-          spi_control_reg             <= SPI_CR_INIT;
-          spi_slave_select_reg        <= SPI_SSR_INIT;
-          spi_global_interrupt_en_reg <= SPI_GIER_INIT;
-          spi_interrupt_status_reg    <= SPI_ISR_INIT;
-          spi_interrupt_enable_reg    <= SPI_IER_INIT;
-          spi_ratio_reg               <= SPI_RCLK_INIT;
-          soft_reset                  <= 1'b0;
-          wr_deadlock                 <= 1'b0;
-          spi_tx_fifo_data            <= {DATA_WIDTH_SPI{1'b0}};
-          spi_tx_fifo_req             <= 0;
-          fsm_axi_wr                  <= StateIdleWr;
-        end
-        StateIdleWr:  begin
-          if(axi_wren)  begin  //..write operation
-            /* update data */
-            case(axi_awaddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
-              SPI_GIER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: spi_global_interrupt_en_reg <= write_data;
-              SPI_ISR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  spi_interrupt_status_reg    <= spi_interrupt_status_reg ^ write_data;
-              SPI_IER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  spi_interrupt_enable_reg    <= write_data;
-              SPI_CR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:   spi_control_reg             <= write_data;
-              SPI_DTR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  begin
-                spi_tx_fifo_data  <= write_data[DATA_WIDTH_SPI-1:0];
-                if(spi_tx_fifo_ack)
-                  spi_tx_fifo_req <= 0;
-                else
-                  spi_tx_fifo_req <= 1;
-              end
-              SPI_SSR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  spi_slave_select_reg        <= write_data;
-              SPI_RCLK[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: spi_ratio_reg               <= write_data[SPI_RATIO_GRADE-1:0];
-              default:  begin
-                spi_global_interrupt_en_reg <= spi_global_interrupt_en_reg;
-                spi_interrupt_status_reg    <= spi_interrupt_status_reg;
-                spi_interrupt_enable_reg    <= spi_interrupt_enable_reg;
-                spi_control_reg             <= spi_control_reg;
-                spi_tx_fifo_data            <= spi_tx_fifo_data;
-                spi_tx_fifo_req             <= spi_tx_fifo_req;
-                spi_slave_select_reg        <= spi_slave_select_reg;
-                spi_ratio_reg               <= spi_ratio_reg;
-              end
-            endcase
-            /* change state */
-            case(axi_awaddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
-              SPI_DTR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  begin //..add an entry into the TX fifo if there is a free slot
-                if(spi_tx_fifo_ack) begin
-                  axi_awready <= 1'b1;                   //..write address transaction acknowledge
-                  axi_wready  <= 1'b1;                   //..write data transaction acknowledge
-                  axi_bresp   <= {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
-                  axi_bvalid  <= 1'b1;                   //..write response valid
-                  axi_bid     <= axi_awid_i;             //..write transaction id
-                  fsm_axi_wr  <= StateResponseWr;
-                end
-              end
-              SPI_SRR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  begin //..check for "0x0000000a", then reset axi spi reg values
-                if(write_data==SPI_SRR_VALUE)
-                  soft_reset    <= 1'b1;                 //..soft reset asserted
-                axi_awready <= 1'b1;                   //..write address transaction acknowledge
-                axi_wready  <= 1'b1;                   //..write data transaction acknowledge
-                axi_bresp   <= {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
-                axi_bvalid  <= 1'b1;                   //..write response valid
-                axi_bid     <= axi_awid_i;             //..write transaction id
-                fsm_axi_wr  <= StateResponseWr;
-              end
-              SPI_CR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:   begin //..update control (just clear fifo reset bits)
-                fsm_axi_wr  <= StateControlWr;
-              end
-              default:  begin //..assert "request_finished" signal
-                axi_awready <= 1'b1;                   //..write address transaction acknowledge
-                axi_wready  <= 1'b1;                   //..write data transaction acknowledge
-                axi_bresp   <= {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
-                axi_bvalid  <= 1'b1;                   //..write response valid
-                axi_bid     <= axi_awid_i;             //..write transaction id
-                fsm_axi_wr  <= StateResponseWr;
-              end
-            endcase
-          end
-          wr_deadlock <= 1'b0;
-        end
-        StateControlWr: begin
-          spi_control_reg[CR_TX_FIFO_RESET_BIT] <= 1'b0;
-          spi_control_reg[CR_RX_FIFO_RESET_BIT] <= 1'b0;
-          axi_awready                           <= 1'b1;                   //..write address transaction acknowledge
-          axi_wready                            <= 1'b1;                   //..write data transaction acknowledge
-          axi_bresp                             <= {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
-          axi_bvalid                            <= 1'b1;                   //..write response valid
-          axi_bid                               <= axi_awid_i;             //..write transaction id
-          wr_deadlock                           <= 1'b0;
-          fsm_axi_wr                            <= StateResponseWr;
-        end
-        StateResponseWr:  begin
-          if(axi_nwren) begin //..wait for the write transaction to finish
-            if(soft_reset)
-              fsm_axi_wr  <= StateResetWr;
-            else
-              fsm_axi_wr  <= StateIdleWr;
-            axi_bid <= {AXI_ID_WIDTH{1'b0}};
-          end
-          else if(wr_timeout)
-            fsm_axi_wr  <= StateInitWr;
-          /* clear ready and valid bits for every channel */
-          // if(~axi_wvalid_i)
-          axi_wready  <= 1'b0;
-          // if(~axi_awvalid_i)
-          axi_awready <= 1'b0;
-          // if(axi_bready_i)
-          axi_bvalid  <= 1'b0;
-          axi_bresp   <= {AXI_RESP_WIDTH{1'b0}};
-          /* deadlock-free */
-          wr_deadlock <= 1'b1;
-        end
-        default:  begin
-          axi_awready                 <= 1'b0;
-          axi_wready                  <= 1'b0;
-          axi_bresp                   <= {AXI_RESP_WIDTH{1'b0}};
-          axi_bvalid                  <= 1'b0;
-          axi_bid                     <= {AXI_ID_WIDTH{1'b0}};
-          spi_control_reg             <= SPI_CR_INIT;
-          spi_slave_select_reg        <= SPI_SSR_INIT;
-          spi_global_interrupt_en_reg <= SPI_GIER_INIT;
-          spi_interrupt_status_reg    <= SPI_ISR_INIT;
-          spi_interrupt_enable_reg    <= SPI_IER_INIT;
-          spi_ratio_reg               <= SPI_RCLK_INIT;
-          soft_reset                  <= 1'b1;
-          wr_deadlock                 <= 1'b0;
-          spi_tx_fifo_data            <= {DATA_WIDTH_SPI{1'b0}};
-          spi_tx_fifo_req             <= 0;
-          fsm_axi_wr                  <= StateInitWr;
-        end
-      endcase
+    else begin
+      axi_awready                 <= axi_awready_d;
+      axi_wready                  <= axi_wready_d;
+      axi_bresp                   <= axi_bresp_d;
+      axi_bvalid                  <= axi_bvalid_d;
+      axi_bid                     <= axi_bid_d;
+      spi_control_reg             <= spi_control_reg_d;
+      spi_slave_select_reg        <= spi_slave_select_reg_d;
+      spi_global_interrupt_en_reg <= spi_global_interrupt_en_reg_d;
+      spi_interrupt_status_reg    <= spi_interrupt_status_reg_d;
+      spi_interrupt_enable_reg    <= spi_interrupt_enable_reg_d;
+      spi_ratio_reg               <= spi_ratio_reg_d;
+      soft_reset                  <= soft_reset_d;
+      wr_deadlock                 <= wr_deadlock_d;
+      spi_tx_fifo_data            <= spi_tx_fifo_data_d;
+      spi_tx_fifo_req             <= spi_tx_fifo_req_d;
+      fsm_axi_wr                  <= fsm_axi_wr_d;
     end
   end
 
-  /* axi slave fsm - read interface */
-  always @ (posedge fixed_clk_i, negedge axi_aresetn_i)  begin
-    if(~axi_aresetn_i)  begin
+  /* axi slave fsm - read interface: comb */
+  always @ (*) begin
+    axi_arready_d     = axi_arready;
+    axi_rdata_d       = axi_rdata;
+    axi_rresp_d       = axi_rresp;
+    axi_rvalid_d      = axi_rvalid;
+    axi_rid_d         = axi_rid;
+    spi_rx_fifo_ack_d = spi_rx_fifo_ack;
+    rd_deadlock_d     = rd_deadlock;
+    spi_rx_fifo_req_d = spi_rx_fifo_req;
+    fsm_axi_rd_d      = fsm_axi_rd;
+    case(fsm_axi_rd)
+      StateInitRd: begin //..reset axi regs
+        axi_arready_d     = 1'b0;
+        axi_rdata_d       = {AXI_DATA_WIDTH{1'b0}};
+        axi_rresp_d       = 2'b00;
+        axi_rvalid_d      = 1'b0;
+        axi_rid_d         = {AXI_ID_WIDTH{1'b0}};
+        spi_rx_fifo_ack_d = 1'b0;
+        rd_deadlock_d     = 1'b0;
+        spi_rx_fifo_req_d = 1'b0;
+        fsm_axi_rd_d      = StateIdleRd;
+      end
+      StateIdleRd: begin
+        if(axi_rden) begin //..read operation
+          /* read data */
+          case(axi_araddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
+            SPI_GIER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: axi_rdata_d = spi_global_interrupt_en_reg;
+            SPI_ISR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata_d = spi_interrupt_status_reg;
+            SPI_IER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata_d = spi_interrupt_enable_reg;
+            SPI_CR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:   axi_rdata_d = spi_control_reg;
+            SPI_SR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:   axi_rdata_d = spi_status_reg;
+            SPI_DTR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata_d = {{(AXI_DATA_WIDTH-DATA_WIDTH_SPI){1'b0}}, spi_tx_fifo_data};
+            SPI_DRR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: begin
+              axi_rdata_d = {{(AXI_DATA_WIDTH-DATA_WIDTH_SPI){1'b0}}, spi_rx_fifo_data};
+              if(spi_rx_fifo_resp)
+                spi_rx_fifo_req_d = 0;
+              else
+                spi_rx_fifo_req_d = 1;
+            end
+            SPI_SSR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata_d = spi_slave_select_reg;
+            SPI_TFOR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: axi_rdata_d = spi_tx_fifo_occupancy_reg;
+            SPI_RFOR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: axi_rdata_d = spi_rx_fifo_occupancy_reg;
+            default:                                  axi_rdata_d = 32'h61626364;
+          endcase
+          /* change state */
+          case(axi_araddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
+            SPI_DRR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: begin
+              if(spi_rx_fifo_resp) begin
+                axi_arready_d     = 1'b1;
+                axi_rresp_d       = 2'b00;
+                axi_rvalid_d      = 1'b1;
+                axi_rid_d         = axi_arid_i;
+                spi_rx_fifo_ack_d = 1'b1;
+                fsm_axi_rd_d      = StateResponseRd;
+              end
+            end
+            default: begin
+              axi_arready_d = 1'b1;
+              axi_rresp_d   = 2'b00;
+              axi_rvalid_d  = 1'b1;
+              axi_rid_d     = axi_arid_i;
+              fsm_axi_rd_d  = StateResponseRd;
+            end
+          endcase
+        end
+        rd_deadlock_d = 1'b0;
+      end
+      StateResponseRd: begin
+        if(axi_nrden) begin
+          axi_rid_d     = axi_arid_i;
+          fsm_axi_rd_d  = StateIdleRd;
+        end
+        else if(rd_timeout)
+          fsm_axi_rd_d  = StateInitRd;
+        /* clear ready and valid bits for every channel */
+        // if(~axi_arvalid_i)
+        axi_arready_d     = 1'b0;
+        // if(axi_rready_i)
+        axi_rvalid_d      = 1'b0;
+        axi_rresp_d       = 2'b00;
+        spi_rx_fifo_ack_d = 1'b0;
+        /* deadlock-free */
+        rd_deadlock_d     = 1'b1;
+      end
+      default: begin
+        axi_arready_d     = 1'b0;
+        axi_rdata_d       = {AXI_DATA_WIDTH{1'b0}};
+        axi_rresp_d       = 2'b00;
+        axi_rvalid_d      = 1'b0;
+        axi_rid_d         = {AXI_ID_WIDTH{1'b0}};
+        spi_rx_fifo_ack_d = 1'b0;
+        rd_deadlock_d     = 1'b0;
+        spi_rx_fifo_req_d = 1'b0;
+        fsm_axi_rd_d      = StateInitRd;
+      end
+    endcase
+  end
+
+  /* axi slave fsm - read interface: seq */
+  always @ (posedge fixed_clk_i, negedge axi_aresetn_i) begin
+    if(~axi_aresetn_i) begin
       axi_arready     <= 1'b0;
       axi_rdata       <= {AXI_DATA_WIDTH{1'b0}};
       axi_rresp       <= 2'b00;
@@ -449,109 +594,32 @@ module axi_spi_top
       spi_rx_fifo_req <= 1'b0;
       fsm_axi_rd      <= StateInitRd;
     end
-    else  begin
-      case(fsm_axi_rd)
-        StateInitRd:  begin //..reset axi regs
-          axi_arready     <= 1'b0;
-          axi_rdata       <= {AXI_DATA_WIDTH{1'b0}};
-          axi_rresp       <= 2'b00;
-          axi_rvalid      <= 1'b0;
-          axi_rid         <= {AXI_ID_WIDTH{1'b0}};
-          spi_rx_fifo_ack <= 1'b0;
-          rd_deadlock     <= 1'b0;
-          spi_rx_fifo_req <= 1'b0;
-          fsm_axi_rd      <= StateIdleRd;
-        end
-        StateIdleRd:  begin
-          if(axi_rden)  begin //..read operation
-            /* read data */
-            case(axi_araddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
-              SPI_GIER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: axi_rdata <= spi_global_interrupt_en_reg;
-              SPI_ISR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata <= spi_interrupt_status_reg;
-              SPI_IER[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata <= spi_interrupt_enable_reg;
-              SPI_CR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:   axi_rdata <= spi_control_reg;
-              SPI_SR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:   axi_rdata <= spi_status_reg;
-              SPI_DTR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata <= {{(AXI_DATA_WIDTH-DATA_WIDTH_SPI){1'b0}}, spi_tx_fifo_data};
-              SPI_DRR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  begin
-                axi_rdata <= {{(AXI_DATA_WIDTH-DATA_WIDTH_SPI){1'b0}}, spi_rx_fifo_data};
-                if(spi_rx_fifo_resp)
-                  spi_rx_fifo_req <= 0;
-                else
-                  spi_rx_fifo_req <= 1;
-              end
-              SPI_SSR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  axi_rdata <= spi_slave_select_reg;
-              SPI_TFOR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: axi_rdata <= spi_tx_fifo_occupancy_reg;
-              SPI_RFOR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: axi_rdata <= spi_rx_fifo_occupancy_reg;
-              default:                                  axi_rdata <= 32'h61626364;
-            endcase
-            /* change state */
-            case(axi_araddr_i[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH])
-              SPI_DRR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]:  begin
-                if(spi_rx_fifo_resp)  begin
-                  axi_arready     <= 1'b1;
-                  axi_rresp       <= 2'b00;
-                  axi_rvalid      <= 1'b1;
-                  axi_rid         <= axi_arid_i;
-                  spi_rx_fifo_ack <= 1'b1;
-                  fsm_axi_rd      <= StateResponseRd;
-                end
-              end
-              default:  begin
-                axi_arready <= 1'b1;
-                axi_rresp   <= 2'b00;
-                axi_rvalid  <= 1'b1;
-                axi_rid     <= axi_arid_i;
-                fsm_axi_rd  <= StateResponseRd;
-              end
-            endcase
-          end
-          rd_deadlock <= 1'b0;
-        end
-        StateResponseRd:  begin
-          if(axi_nrden) begin
-            axi_rid     <= axi_arid_i;
-            fsm_axi_rd  <= StateIdleRd;
-          end
-          else if(rd_timeout)
-            fsm_axi_rd  <= StateInitRd;
-          /* clear ready and valid bits for every channel */
-          // if(~axi_arvalid_i)
-          axi_arready     <= 1'b0;
-          // if(axi_rready_i)
-          axi_rvalid      <= 1'b0;
-          axi_rresp       <= 2'b00;
-          spi_rx_fifo_ack <= 1'b0;
-          /* deadlock-free */
-          rd_deadlock     <= 1'b1;
-        end
-        default: begin
-          axi_arready     <= 1'b0;
-          axi_rdata       <= {AXI_DATA_WIDTH{1'b0}};
-          axi_rresp       <= 2'b00;
-          axi_rvalid      <= 1'b0;
-          axi_rid         <= {AXI_ID_WIDTH{1'b0}};
-          spi_rx_fifo_ack <= 1'b0;
-          rd_deadlock     <= 1'b0;
-          spi_rx_fifo_req <= 1'b0;
-          fsm_axi_rd      <= StateInitRd;
-        end
-      endcase
+    else begin
+      axi_arready     <= axi_arready_d;
+      axi_rdata       <= axi_rdata_d;
+      axi_rresp       <= axi_rresp_d;
+      axi_rvalid      <= axi_rvalid_d;
+      axi_rid         <= axi_rid_d;
+      spi_rx_fifo_ack <= spi_rx_fifo_ack_d;
+      rd_deadlock     <= rd_deadlock_d;
+      spi_rx_fifo_req <= spi_rx_fifo_req_d;
+      fsm_axi_rd      <= fsm_axi_rd_d;
     end
   end
 
   /* deadlock counters - write */
-  always @ (posedge fixed_clk_i, negedge axi_aresetn_i)  begin
-    if(~axi_aresetn_i)  begin
+  always @ (posedge fixed_clk_i, negedge axi_aresetn_i) begin
+    if(~axi_aresetn_i) begin
       wr_deadlock_cnt <= 0;
       wr_timeout      <= 1'b0;
     end
-    else  begin
+    else begin
       if(wr_deadlock) begin
         wr_deadlock_cnt <= wr_deadlock_cnt + {{DEADLOCK_WIDTH{1'b0}},1'b1};
         if(wr_deadlock_cnt==DEADLOCK_LIMIT)
           wr_timeout    <= 1'b1;
       end
-      else  begin
+      else begin
         wr_deadlock_cnt <= 0;
         wr_timeout      <= 1'b0;
       end
@@ -559,18 +627,18 @@ module axi_spi_top
   end
 
   /* deadlock counters - read */
-  always @ (posedge fixed_clk_i, negedge axi_aresetn_i)  begin
-    if(~axi_aresetn_i)  begin
+  always @ (posedge fixed_clk_i, negedge axi_aresetn_i) begin
+    if(~axi_aresetn_i) begin
       rd_deadlock_cnt <= 0;
       rd_timeout      <= 1'b0;
     end
-    else  begin
+    else begin
       if(rd_deadlock) begin
         rd_deadlock_cnt <= rd_deadlock_cnt + {{DEADLOCK_WIDTH{1'b0}},1'b1};
         if(rd_deadlock_cnt==DEADLOCK_LIMIT)
           rd_timeout    <= 1'b1;
       end
-      else  begin
+      else begin
         rd_deadlock_cnt <= 0;
         rd_timeout      <= 1'b0;
       end
