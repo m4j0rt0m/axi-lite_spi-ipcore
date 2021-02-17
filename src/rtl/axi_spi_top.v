@@ -128,7 +128,7 @@ module axi_spi_top
   genvar I;
 
   /* regs and wires declarations */
-  reg                         soft_reset, soft_reset_d;                     //..spi control soft reset (by software or deadlock)
+  reg                         soft_reset, soft_reset_d;       //..spi control soft reset (by software or deadlock)
   wire                        axi_wren;                       //..axi-transaction write enable
   wire                        axi_nwren;                      //..axi-transaction write disable
   wire                        axi_rden;                       //..axi-transaction read enable
@@ -141,8 +141,8 @@ module axi_spi_top
   reg                         axi_sync_rden, axi_sync_rden_d; //..read axi-transaction synchronizer between clock domains
   reg   [DEADLOCK_WIDTH:0]    wr_deadlock_cnt;                //..write deadlock counter
   reg   [DEADLOCK_WIDTH:0]    rd_deadlock_cnt;                //..read deadlock counter
-  reg                         wr_deadlock, wr_deadlock_d;                    //..write deadlock counter enable
-  reg                         rd_deadlock, rd_deadlock_d;            //..read deadlock counter enable
+  reg                         wr_deadlock, wr_deadlock_d;     //..write deadlock counter enable
+  reg                         rd_deadlock, rd_deadlock_d;     //..read deadlock counter enable
   reg                         wr_timeout;                     //..write deadlock timeout
   reg                         rd_timeout;                     //..read deadlock timeout
   wire  [AXI_DATA_WIDTH-1:0]  write_data;                     //..write data after byte enable
@@ -366,7 +366,7 @@ module axi_spi_top
             end
             SPI_SRR[AXI_ADDR_WIDTH-1:AXI_LSB_WIDTH]: begin //..check for "0x0000000a", then reset axi spi reg values
               if(write_data==SPI_SRR_VALUE)
-                soft_reset_d    = 1'b1;                 //..soft reset asserted
+                soft_reset_d    = 1'b1;               //..soft reset asserted
               axi_awready_d = 1'b1;                   //..write address transaction acknowledge
               axi_wready_d  = 1'b1;                   //..write data transaction acknowledge
               axi_bresp_d   = {AXI_RESP_WIDTH{1'b0}}; //..write response "OKAY"
