@@ -176,7 +176,7 @@ module spi_fifo
         end
         StateIdleRd: begin //..wait for request
           if(req_b_i) begin //..read request issued
-            data_b_d      = fifo[fifo_head_pointer];
+            data_b_d      = {DATA_WIDTH{fifo_valid}} & fifo[fifo_head_pointer];
             resp_b_d      = 1'b1;
             fsm_fifo_rd_d = StateReqRd;
           end
