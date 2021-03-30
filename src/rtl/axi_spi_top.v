@@ -46,7 +46,6 @@ module axi_spi_top
   localparam  AXI_BYTE_NUM    = AXI_DATA_WIDTH/BYTE;
   localparam  AXI_LSB_WIDTH   = $clog2(AXI_BYTE_NUM);
   localparam  DEADLOCK_LIMIT  = `_AXI_SPI_DEADLOCK_;
-  localparam  DEADLOCK_WIDTH  = $clog2(DEADLOCK_LIMIT);
 
   /* axi-spi parameters */
   localparam  DATA_WIDTH_SPI        = `_DATA_WIDTH_SPI_;
@@ -139,8 +138,8 @@ module axi_spi_top
   wire                        axi_nrdresp;                    //..axi-transaction read finished response
   reg                         axi_sync_wren, axi_sync_wren_d; //..write axi-transaction synchronizer between clock domains
   reg                         axi_sync_rden, axi_sync_rden_d; //..read axi-transaction synchronizer between clock domains
-  reg   [DEADLOCK_WIDTH:0]    wr_deadlock_cnt;                //..write deadlock counter
-  reg   [DEADLOCK_WIDTH:0]    rd_deadlock_cnt;                //..read deadlock counter
+  reg   [DEADLOCK_LIMIT-1:0]  wr_deadlock_cnt;                //..write deadlock counter
+  reg   [DEADLOCK_LIMIT-1:0]  rd_deadlock_cnt;                //..read deadlock counter
   reg                         wr_deadlock, wr_deadlock_d;     //..write deadlock counter enable
   reg                         rd_deadlock, rd_deadlock_d;     //..read deadlock counter enable
   reg                         wr_timeout;                     //..write deadlock timeout
@@ -610,17 +609,17 @@ module axi_spi_top
   /* deadlock counters - write */
   always @ (posedge fixed_clk_i, negedge axi_aresetn_i) begin
     if(~axi_aresetn_i) begin
-      wr_deadlock_cnt <= 0;
+      wr_deadlock_cnt <= {DEADLOCK_LIMIT{1'b0}};
       wr_timeout      <= 1'b0;
     end
     else begin
       if(wr_deadlock) begin
-        wr_deadlock_cnt <= wr_deadlock_cnt + {{DEADLOCK_WIDTH{1'b0}},1'b1};
-        if(wr_deadlock_cnt==DEADLOCK_LIMIT)
+        wr_deadlock_cnt <= wr_deadlock_cnt + {{DEADLOCK_LIMIT{1'b0}},1'b1};
+        if(wr_deadlock_cnt[DEADLOCK_LIMIT-1])
           wr_timeout    <= 1'b1;
       end
       else begin
-        wr_deadlock_cnt <= 0;
+        wr_deadlock_cnt <= {DEADLOCK_LIMIT{1'b0}};
         wr_timeout      <= 1'b0;
       end
     end
@@ -629,17 +628,17 @@ module axi_spi_top
   /* deadlock counters - read */
   always @ (posedge fixed_clk_i, negedge axi_aresetn_i) begin
     if(~axi_aresetn_i) begin
-      rd_deadlock_cnt <= 0;
+      rd_deadlock_cnt <= {DEADLOCK_LIMIT{1'b0}};
       rd_timeout      <= 1'b0;
     end
     else begin
       if(rd_deadlock) begin
-        rd_deadlock_cnt <= rd_deadlock_cnt + {{DEADLOCK_WIDTH{1'b0}},1'b1};
-        if(rd_deadlock_cnt==DEADLOCK_LIMIT)
+        rd_deadlock_cnt <= rd_deadlock_cnt + {{DEADLOCK_LIMIT{1'b0}},1'b1};
+        if(rd_deadlock_cnt[DEADLOCK_LIMIT-1])
           rd_timeout    <= 1'b1;
       end
       else begin
-        rd_deadlock_cnt <= 0;
+        rd_deadlock_cnt <= {DEADLOCK_LIMIT{1'b0}};
         rd_timeout      <= 1'b0;
       end
     end

@@ -25,6 +25,6 @@
   `define _AXI_SPI_RESP_WIDTH_  2
   `define _AXI_SPI_ID_WIDTH_    12
 
-  `define _AXI_SPI_DEADLOCK_    2**20
+  `define _AXI_SPI_DEADLOCK_    32
 
   `endif
